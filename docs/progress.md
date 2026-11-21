@@ -1,17 +1,20 @@
 # MVP Build Progress & Ticket Queue
 
-## Current Status — Session 2 (Deployment Fix)
-- **Frontend:** ✅ Ready (preview: `frontend-ljmrijqmo...vercel.app`)
-- **Backend:** ✅ Ready (alias: `backend-three-pi-11.vercel.app`)
+## Current Status — Deployment Slice Verified
+- **Frontend:** Vercel deploy succeeds. `NEXT_PUBLIC_API_URL` is not configured, so deployed UI defaults to `http://localhost:8000`.
+- **Backend:** Vercel production deployment Ready at `https://backend-three-pi-11.vercel.app`.
+- **Verified live:** `GET /api/health`, `GET /api/branches` (8 presets), `POST /api/discover` (5 mock leads), status update to `Contacted`, CSV export (6 rows).
 - **Last Updated By:** Claude Code
 - **Latest Commits:** 
-  - `bb9c067`: In-memory SQLite for Vercel Functions
-  - `346846f`: Trigger backend redeployment
+  - `cdec077`: timezone-aware SQLModel timestamps
+  - `bb9c067`: in-memory SQLite for Vercel Functions
+  - `346846f`: trigger backend redeployment
   - `95e008b`: Vercel FastAPI config
-- **Remaining Blockers:**
-  - Vercel Deployment Protection enabled on backend (auto-auth bypass generated)
-  - Frontend `NEXT_PUBLIC_API_URL` not set on Vercel env
-  - No E2E test of full flow (health → branches → discover → status → export)
+- **Known Constraints / Next Ticket:**
+  - Vercel Deployment Protection blocks unauthenticated browser-to-backend calls.
+  - Vercel in-memory SQLite persists only per warm function instance; status and leads are not durable. Add managed Postgres before treating Ticket 5 persistence as complete.
+  - Ticket 4 (`POST /api/leads/enrich`, ScrapeGraphAI, pitch drawer) remains unimplemented.
+  - Set `NEXT_PUBLIC_API_URL` and backend `FRONTEND_ORIGIN`, then run browser E2E verification.
 
 ## Completed Slices
 - [x] **PRD & Architecture Locked** — Defined problem, core user flow, FRs, non-goals, stack, and data schema in [PRD.md](file:///Users/raihanromzi/Documents/Development/bftm-ai-leading-finder-system/docs/PRD.md).
