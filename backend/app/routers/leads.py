@@ -1,9 +1,9 @@
-"""Lead management: status updates, enrichment stubs, CSV export."""
+"""Lead management: status updates, enrichment, CSV export."""
 
 import io
 import csv
-from datetime import datetime
-from fastapi import APIRouter, Depends
+from datetime import datetime, timezone
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlmodel import Session, select
 from pydantic import BaseModel
@@ -16,6 +16,71 @@ router = APIRouter()
 
 class StatusUpdateRequest(BaseModel):
     status: str  # "New", "Contacted", "Visit Scheduled", "Won", "Dropped"
+
+
+class EnrichRequest(BaseModel):
+    lead_ids: list[int]
+
+
+@router.post("/leads/enrich")
+async def enrich_leads(req: EnrichRequest, session: Session = Depends(get_session)):
+    """
+    Enrich selected leads with mock signals and generate pitch scripts.
+    MVP: Mock enrichment. Production: integrate ScrapeGraphAI + Gemini.
+    """
+    if not req.lead_ids:
+        raise HTTPException(status_code=400, detail="No lead IDs provided")
+
+    results = []
+    for lead_id in req.lead_ids:
+        lead = session.get(Lead, lead_id)
+        if not lead:
+            continue
+
+        # Mock enrichment signals
+        signals = {
+            "employee_count": 150 if lead.category == "factory" else 50,
+            "current_payment": "Cash only" if lead.category == "cafe" else "Multiple channels",
+            "news_signal": f"Perusahaan {lead.name} berkembang pesat di {lead.address.split(',')[-1]}",
+        }
+
+        # Generate pitch script (Bahasa Indonesia)
+        pitch_wa = (
+            f"Halo Ibu/Bapak {lead.name.split()[0]}, kami dari Bank Mandiri. "
+            f"Kami lihat {lead.name} sedang berkembang dan membutuhkan solusi pembayaran digital. "
+            f"Produk kami {lead.recommended_product} cocok untuk {lead.category} Anda. "
+            f"Bisa kami diskusi lebih lanjut?"
+        )
+        pitch_visit = (
+            f"Selamat pagi, kami dari Bank Mandiri. Kami ingin menawarkan {lead.recommended_product} "
+            f"untuk meningkatkan efisiensi bisnis {lead.name}. Tersedia karyawan {signals['employee_count']} orang. "
+            f"Metode pembayaran saat ini: {signals['current_payment']}."
+        )
+
+        # Upsert enrichment record
+        enrichment = session.exec(
+            select(LeadEnrichment).where(LeadEnrichment.lead_id == lead_id)
+        ).first()
+        if not enrichment:
+            enrichment = LeadEnrichment(lead_id=lead_id)
+        enrichment.raw_scraped_summary = signals["news_signal"]
+        enrichment.employee_or_student_count = signals["employee_count"]
+        enrichment.current_payment_methods = signals["current_payment"]
+        enrichment.pitch_script_wa = pitch_wa
+        enrichment.pitch_script_visit = pitch_visit
+        enrichment.enriched_at = datetime.now(timezone.utc)
+
+        session.add(enrichment)
+        results.append({
+            "lead_id": lead_id,
+            "name": lead.name,
+            "pitch_wa": pitch_wa,
+            "pitch_visit": pitch_visit,
+            "signals": signals,
+        })
+
+    session.commit()
+    return {"enriched_count": len(results), "results": results}
 
 
 @router.patch("/leads/{lead_id}/status")
