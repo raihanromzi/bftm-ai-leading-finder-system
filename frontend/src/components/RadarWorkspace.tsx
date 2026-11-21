@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic'
 import { useEffect, useState } from 'react'
-import { MapPin, Radio, AlertCircle, CheckCircle2, Loader } from 'lucide-react'
+import { Radio, AlertCircle, CheckCircle2, Loader } from 'lucide-react'
 import LeadsTable from './LeadsTable'
 
 const RadarMap = dynamic(() => import('./RadarMap'), { ssr: false })
@@ -132,6 +132,10 @@ export default function RadarWorkspace() {
     } catch (err) {
       console.error('Export failed:', err)
     }
+  }
+
+  const handleMapLocationChange = (coords: [number, number]) => {
+    setMapCenter(coords)
   }
 
   return (
@@ -306,7 +310,7 @@ export default function RadarWorkspace() {
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Map */}
         <div style={{ flex: leads.length > 0 ? '45%' : '100%', position: 'relative', borderBottom: leads.length > 0 ? '1px solid #E5E7EB' : 'none', transition: 'flex 300ms var(--ease-out)' }}>
-          <RadarMap center={mapCenter} leads={leads} />
+          <RadarMap center={mapCenter} radiusKm={radius} leads={leads} onLocationChange={handleMapLocationChange} />
         </div>
 
         {/* Table (if leads exist) */}

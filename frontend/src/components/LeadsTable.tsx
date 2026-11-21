@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Copy, Download, ChevronDown } from 'lucide-react'
+import { Download, ChevronDown } from 'lucide-react'
 
 interface Lead {
   id: number
@@ -24,13 +24,6 @@ interface LeadsTableProps {
 }
 
 const STATUS_OPTIONS = ['New', 'Contacted', 'Visit Scheduled', 'Won', 'Dropped']
-const STATUS_COLORS: Record<string, string> = {
-  New: 'bg-gray-100 text-gray-700',
-  Contacted: 'bg-blue-100 text-blue-700',
-  'Visit Scheduled': 'bg-yellow-100 text-yellow-700',
-  Won: 'bg-green-100 text-green-700',
-  Dropped: 'bg-red-100 text-red-700',
-}
 
 export default function LeadsTable({
   leads,
@@ -66,7 +59,7 @@ export default function LeadsTable({
       <div style={{ padding: '32px 20px', textAlign: 'center', color: '#6B7280' }}>
         <p style={{ fontSize: '14px', fontWeight: 500 }}>Tidak ada leads ditemukan</p>
         <p style={{ fontSize: '12px', marginTop: '8px' }}>
-          Pilih lokasi cabang dan klik "Scan" untuk menemukan entitas terdekat.
+          Pilih lokasi cabang dan klik &quot;Scan&quot; untuk menemukan entitas terdekat.
         </p>
       </div>
     )

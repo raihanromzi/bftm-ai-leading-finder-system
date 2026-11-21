@@ -1,9 +1,9 @@
 # MVP Build Progress & Ticket Queue
 
 ## Current Status
-- **Active Ticket:** Ticket 2
-- **Last Updated By:** Principal MVP Product Architect
-- **Blockers:** None
+- **Active Ticket:** MVP Complete ✅
+- **Last Updated By:** Principal MVP Product Architect + Claude Code
+- **Blockers:** None (ready for Vercel setup)
 
 ## Completed Slices
 - [x] **PRD & Architecture Locked** — Defined problem, core user flow, FRs, non-goals, stack, and data schema in [PRD.md](file:///Users/raihanromzi/Documents/Development/bftm-ai-leading-finder-system/docs/PRD.md).
@@ -19,7 +19,7 @@
   - *Acceptance Check:* Passed `npm run type-check`, `npm run lint`, `npm run build` (exit 0) and FastAPI `GET /api/health` + `GET /api/branches` (exit 0).
 
 ## Ticket Queue (Vertical MVP Slices)
-- [ ] **Ticket 2: Hyperlocal Discovery Engine (Google Places & Map Pin)**
+- [x] **Ticket 2: Hyperlocal Discovery Engine (Google Places & Map Pin)**
   - Implement branch presets dropdown + map pin click + radius circle (1–25 km).
   - Implement `POST /api/discover` querying Google Places API for Indonesian categories (schools, retail, factories, student hubs) with mock fallback if no API key is provided yet.
   - *Acceptance Check:* Dropping a pin on Jakarta Thamrin with 5 km radius returns a populated lead table and map markers with place names, addresses, and coordinates.
