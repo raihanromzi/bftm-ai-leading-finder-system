@@ -6,6 +6,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     google_places_api_key: str = ""
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-3.5-flash-lite"
     openai_api_key: str = ""
     frontend_origin: str = "http://localhost:3000"
     # Use in-memory SQLite on Vercel (ephemeral); file-based locally for dev

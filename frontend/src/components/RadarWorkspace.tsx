@@ -143,12 +143,15 @@ export default function RadarWorkspace() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ latitude: coordinates[0], longitude: coordinates[1], radius_km: radius }),
       })
-      if (!response.ok) throw new Error('Discovery failed')
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.detail || 'Discovery failed')
+      }
       const foundLeads: LeadItem[] = (await response.json()).leads || []
       setLeads(foundLeads)
       setNotice(foundLeads.length ? `${foundLeads.length} prospek ditemukan dalam radius ${radius} km.` : 'Tidak ada prospek pada radius ini. Pindahkan titik atau perluas radius.')
-    } catch {
-      setNotice('Pemindaian gagal. Periksa koneksi backend, lalu coba lagi.')
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'Pemindaian gagal. Periksa koneksi backend, lalu coba lagi.')
     } finally {
       setLoading(false)
     }

@@ -1,13 +1,17 @@
 """Lead management: status updates, enrichment, CSV export."""
 
-import io
 import csv
+import io
+import json
 from datetime import datetime, timezone
+
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from sqlmodel import Session, select
 from pydantic import BaseModel
+from sqlmodel import Session, select
 
+from app.config import settings
 from app.database import get_session
 from app.models import Lead, LeadEnrichment
 
@@ -22,12 +26,76 @@ class EnrichRequest(BaseModel):
     lead_ids: list[int]
 
 
+def _mock_enrichment_for_lead(lead: Lead) -> tuple[dict, str, str]:
+    signals = {
+        "employee_count": 150 if lead.category == "factory" else 50,
+        "current_payment": "Cash only" if lead.category == "cafe" else "Multiple channels",
+        "news_signal": f"Perusahaan {lead.name} berkembang pesat di {lead.address.split(',')[-1]}",
+    }
+    pitch_wa = (
+        f"Halo Ibu/Bapak {lead.name.split()[0]}, kami dari Bank Mandiri. "
+        f"Kami lihat {lead.name} sedang berkembang dan membutuhkan solusi pembayaran digital. "
+        f"Produk kami {lead.recommended_product} cocok untuk {lead.category} Anda. "
+        f"Bisa kami diskusi lebih lanjut?"
+    )
+    pitch_visit = (
+        f"Selamat pagi, kami dari Bank Mandiri. Kami ingin menawarkan {lead.recommended_product} "
+        f"untuk meningkatkan efisiensi bisnis {lead.name}. Tersedia karyawan {signals['employee_count']} orang. "
+        f"Metode pembayaran saat ini: {signals['current_payment']}."
+    )
+    return signals, pitch_wa, pitch_visit
+
+
+async def _gemini_enrichment_for_lead(lead: Lead) -> tuple[dict, str, str, str]:
+    """Generate lead enrichment signals and Bahasa Indonesia pitch scripts via Gemini free tier."""
+    prompt = (
+        "Anda adalah asisten BFTM (Branch Funding Transaction Manager) Bank Mandiri di wilayah Jabodetabek. "
+        "Buat analisis singkat dan naskah penawaran dalam Bahasa Indonesia yang sopan, ringkas, dan natural.\n"
+        f"Nama entitas: {lead.name}\n"
+        f"Kategori: {lead.category}\n"
+        f"Alamat: {lead.address}\n"
+        f"Produk rekomendasi Mandiri: {lead.recommended_product}\n"
+        f"Target pengambil keputusan: {lead.pitch_angle}\n\n"
+        "Kembalikan JSON valid dengan field persis:\n"
+        '{"employee_count": <integer estimasi karyawan/siswa>, '
+        '"current_payment": "<string metode pembayaran umum untuk kategori ini>", '
+        '"news_signal": "<1 kalimat ringkasan potensi akuisisi>", '
+        '"pitch_wa": "<pesan WhatsApp singkat <= 3 kalimat>", '
+        '"pitch_visit": "<skrip pembuka kunjungan tatap muka <= 3 kalimat>"}'
+    )
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{settings.gemini_model}:generateContent"
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "responseMimeType": "application/json",
+            "temperature": 0.4,
+        },
+    }
+    async with httpx.AsyncClient(timeout=20) as client:
+        response = await client.post(
+            url,
+            params={"key": settings.gemini_api_key},
+            json=payload,
+        )
+        response.raise_for_status()
+    data = response.json()
+    raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
+    parsed = json.loads(raw_text)
+    signals = {
+        "employee_count": int(parsed.get("employee_count") or 50),
+        "current_payment": str(parsed.get("current_payment") or "QRIS / Transfer"),
+        "news_signal": str(parsed.get("news_signal") or f"Potensi kerja sama transaksi dengan {lead.name}."),
+    }
+    pitch_wa = str(parsed.get("pitch_wa") or "")
+    pitch_visit = str(parsed.get("pitch_visit") or "")
+    if not pitch_wa or not pitch_visit:
+        raise ValueError("Incomplete Gemini response")
+    return signals, pitch_wa, pitch_visit, settings.gemini_model
+
+
 @router.post("/leads/enrich")
 async def enrich_leads(req: EnrichRequest, session: Session = Depends(get_session)):
-    """
-    Enrich selected leads with mock signals and generate pitch scripts.
-    MVP: Mock enrichment. Production: integrate ScrapeGraphAI + Gemini.
-    """
+    """Enrich selected leads using Gemini (free tier) with mock fallback."""
     if not req.lead_ids:
         raise HTTPException(status_code=400, detail="No lead IDs provided")
 
@@ -37,27 +105,15 @@ async def enrich_leads(req: EnrichRequest, session: Session = Depends(get_sessio
         if not lead:
             continue
 
-        # Mock enrichment signals
-        signals = {
-            "employee_count": 150 if lead.category == "factory" else 50,
-            "current_payment": "Cash only" if lead.category == "cafe" else "Multiple channels",
-            "news_signal": f"Perusahaan {lead.name} berkembang pesat di {lead.address.split(',')[-1]}",
-        }
+        ai_source = "mock"
+        if settings.gemini_api_key:
+            try:
+                signals, pitch_wa, pitch_visit, ai_source = await _gemini_enrichment_for_lead(lead)
+            except (httpx.HTTPError, KeyError, IndexError, ValueError, json.JSONDecodeError):
+                signals, pitch_wa, pitch_visit = _mock_enrichment_for_lead(lead)
+        else:
+            signals, pitch_wa, pitch_visit = _mock_enrichment_for_lead(lead)
 
-        # Generate pitch script (Bahasa Indonesia)
-        pitch_wa = (
-            f"Halo Ibu/Bapak {lead.name.split()[0]}, kami dari Bank Mandiri. "
-            f"Kami lihat {lead.name} sedang berkembang dan membutuhkan solusi pembayaran digital. "
-            f"Produk kami {lead.recommended_product} cocok untuk {lead.category} Anda. "
-            f"Bisa kami diskusi lebih lanjut?"
-        )
-        pitch_visit = (
-            f"Selamat pagi, kami dari Bank Mandiri. Kami ingin menawarkan {lead.recommended_product} "
-            f"untuk meningkatkan efisiensi bisnis {lead.name}. Tersedia karyawan {signals['employee_count']} orang. "
-            f"Metode pembayaran saat ini: {signals['current_payment']}."
-        )
-
-        # Upsert enrichment record
         enrichment = session.exec(
             select(LeadEnrichment).where(LeadEnrichment.lead_id == lead_id)
         ).first()
@@ -74,6 +130,7 @@ async def enrich_leads(req: EnrichRequest, session: Session = Depends(get_sessio
         results.append({
             "lead_id": lead_id,
             "name": lead.name,
+            "source": ai_source,
             "pitch_wa": pitch_wa,
             "pitch_visit": pitch_visit,
             "signals": signals,

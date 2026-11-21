@@ -116,6 +116,12 @@ const centerBranchIcon = L.divIcon({
   popupAnchor: [0, -22],
 })
 
+// Jabodetabek + 40 km outside Jabodetabek bounds
+const JABODETABEK_MAX_BOUNDS: L.LatLngBoundsExpression = [
+  [-7.06, 106.09],
+  [-5.72, 107.58],
+]
+
 export default function RadarMap({
   center,
   radiusKm,
@@ -129,6 +135,9 @@ export default function RadarMap({
       <MapContainer
         center={center}
         zoom={12}
+        minZoom={10}
+        maxBounds={JABODETABEK_MAX_BOUNDS}
+        maxBoundsViscosity={1.0}
         style={{ height: '100%', width: '100%' }}
         zoomControl={false}
       >

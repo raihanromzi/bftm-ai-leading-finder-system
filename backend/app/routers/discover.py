@@ -33,6 +33,13 @@ MOCK_LEAD_TEMPLATES = [
 MOCK_OFFSETS = [(0.2, 15), (0.35, 110), (0.5, 205), (0.65, 285), (0.8, 45)]
 GOOGLE_TYPES = ["school", "university", "cafe", "restaurant", "supermarket", "convenience_store"]
 
+# Jabodetabek core bounding box + 40 km outside Jabodetabek
+JABODETABEK_LAT_MIN = -6.70
+JABODETABEK_LAT_MAX = -6.08
+JABODETABEK_LNG_MIN = 106.45
+JABODETABEK_LNG_MAX = 107.22
+MAX_OUTSIDE_JABODETABEK_KM = 40.0
+
 
 def distance_km(start_lat: float, start_lng: float, end_lat: float, end_lng: float) -> float:
     """Great-circle distance, used as a provider-independent radius guard."""
@@ -40,6 +47,13 @@ def distance_km(start_lat: float, start_lng: float, end_lat: float, end_lng: flo
     lng_delta = radians(end_lng - start_lng)
     a = sin(lat_delta / 2) ** 2 + cos(radians(start_lat)) * cos(radians(end_lat)) * sin(lng_delta / 2) ** 2
     return 2 * 6_371.0088 * asin(sqrt(a))
+
+
+def is_within_jabodetabek_buffer(latitude: float, longitude: float) -> bool:
+    """Return True if coordinates are inside Jabodetabek or within 40 km outside it."""
+    clamped_lat = min(max(latitude, JABODETABEK_LAT_MIN), JABODETABEK_LAT_MAX)
+    clamped_lng = min(max(longitude, JABODETABEK_LNG_MIN), JABODETABEK_LNG_MAX)
+    return distance_km(latitude, longitude, clamped_lat, clamped_lng) <= MAX_OUTSIDE_JABODETABEK_KM
 
 
 def mock_leads(req: DiscoverRequest) -> list[dict]:
@@ -115,11 +129,11 @@ async def google_places(req: DiscoverRequest) -> list[dict]:
 
 @router.post("/discover")
 async def discover(req: DiscoverRequest, session: Session = Depends(get_session)):
-    """Discover entities within allowed regions: Jakarta, Jabodetabek, Cikarang, Karawang."""
-    if not (-6.5 <= req.latitude <= -5.9 and 106.5 <= req.longitude <= 107.5):
+    """Discover entities locked to Jabodetabek + 40 km outside Jabodetabek."""
+    if not is_within_jabodetabek_buffer(req.latitude, req.longitude):
         raise HTTPException(
             status_code=400,
-            detail="Pemindaian hanya tersedia di Jakarta, Jabodetabek, Cikarang, dan Karawang.",
+            detail="Pemindaian terkunci hanya untuk wilayah Jabodetabek dan maksimal 40 km di luar Jabodetabek.",
         )
 
     source = "mock"
@@ -135,11 +149,12 @@ async def discover(req: DiscoverRequest, session: Session = Depends(get_session)
     if req.categories:
         leads_data = [lead for lead in leads_data if lead["category"] in req.categories]
 
-    # Google is asked for a circle; this guard keeps bad provider data off the map.
+    # Enforce both scan radius and Jabodetabek + 40 km geofence so no out-of-area leads load.
     leads_data = [
         lead
         for lead in leads_data
         if distance_km(req.latitude, req.longitude, lead["latitude"], lead["longitude"]) <= req.radius_km
+        and is_within_jabodetabek_buffer(lead["latitude"], lead["longitude"])
     ]
 
     results = []
