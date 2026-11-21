@@ -163,7 +163,7 @@ export default function LeadDetailDrawer({
         role="dialog"
         aria-modal="true"
         aria-labelledby="drawer-title"
-        className={`fixed top-0 right-0 z-[1200] h-full w-full max-w-lg bg-white/95 backdrop-blur-2xl border-l border-black/[0.08] shadow-2xl flex flex-col justify-between overflow-hidden transition-transform duration-300 ${
+        className={`field-dossier fixed top-0 right-0 z-[1200] h-full w-full max-w-lg bg-white/95 backdrop-blur-2xl border-l border-black/[0.08] shadow-2xl flex flex-col justify-between overflow-hidden transition-transform duration-300 ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
         style={{

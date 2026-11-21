@@ -149,7 +149,7 @@ export default function LeadsTable({
   }
 
   return (
-    <div className="flex flex-col h-full bg-white overflow-hidden select-none">
+    <div className="lead-ledger-table flex flex-col h-full bg-white overflow-hidden select-none">
       {/* Search & Category Pills Filter Bar */}
       <div className="p-3.5 border-b border-black/[0.06] bg-neutral-50/50 space-y-2.5">
         <div className="flex items-center gap-2">
