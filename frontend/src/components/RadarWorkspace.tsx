@@ -31,6 +31,22 @@ interface Lead {
   pitch_angle: string
   fit_score: number
   lead_status: string
+  enrichment?: {
+    employee_or_student_count: number
+    current_payment_methods: string
+    pitch_script_wa: string
+    pitch_script_visit: string
+  } | null
+}
+
+interface EnrichmentResult {
+  lead_id: number
+  pitch_wa: string
+  pitch_visit: string
+  signals: {
+    employee_count: number
+    current_payment: string
+  }
 }
 
 export default function RadarWorkspace() {
@@ -40,6 +56,7 @@ export default function RadarWorkspace() {
   const [radius, setRadius] = useState(10)
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [mapCenter, setMapCenter] = useState<[number, number]>([-2.5489, 118.0149])
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -84,22 +101,56 @@ export default function RadarWorkspace() {
     if (!selectedBranch) return
 
     setLoading(true)
+    setError('')
     try {
       const res = await fetch(`${API_URL}/api/discover`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          latitude: selectedBranch.latitude,
-          longitude: selectedBranch.longitude,
+          latitude: mapCenter[0],
+          longitude: mapCenter[1],
           radius_km: radius,
         }),
       })
       const data = await res.json()
       setLeads(data.leads || [])
+      setMapCenter([selectedBranch.latitude, selectedBranch.longitude])
     } catch (err) {
+      setError(err instanceof Error ? err.message : 'Discovery failed')
       console.error('Discovery failed:', err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleEnrich = async (leadIds: number[]) => {
+    if (leadIds.length === 0) return
+    setError('')
+    try {
+      const res = await fetch(`${API_URL}/api/leads/enrich`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lead_ids: leadIds }),
+      })
+      if (!res.ok) throw new Error('Enrichment failed')
+      const data: { results?: EnrichmentResult[] } = await res.json()
+      const enrichedMap = new Map(
+        data.results?.map((r) => [
+          r.lead_id,
+          {
+            employee_or_student_count: r.signals.employee_count,
+            current_payment_methods: r.signals.current_payment,
+            pitch_script_wa: r.pitch_wa,
+            pitch_script_visit: r.pitch_visit,
+          },
+        ])
+      )
+      setLeads((prev) =>
+        prev.map((l) => (enrichedMap.has(l.id) ? { ...l, enrichment: enrichedMap.get(l.id) } : l))
+      )
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Enrichment error')
+      console.error('Enrichment failed:', err)
     }
   }
 
@@ -313,6 +364,13 @@ export default function RadarWorkspace() {
           <RadarMap center={mapCenter} radiusKm={radius} leads={leads} onLocationChange={handleMapLocationChange} />
         </div>
 
+        {/* Error banner */}
+        {error && (
+          <div style={{ padding: '12px 16px', background: '#FEE2E2', color: '#991B1B', fontSize: '13px', borderBottom: '1px solid #FECACA' }}>
+            {error}
+          </div>
+        )}
+
         {/* Table (if leads exist) */}
         {leads.length > 0 && (
           <div style={{ flex: '55%', overflow: 'hidden' }}>
@@ -320,7 +378,7 @@ export default function RadarWorkspace() {
               leads={leads}
               onStatusChange={handleStatusChange}
               onExport={handleExport}
-              onEnrich={(ids) => console.log('Enriching:', ids)}
+              onEnrich={handleEnrich}
             />
           </div>
         )}
