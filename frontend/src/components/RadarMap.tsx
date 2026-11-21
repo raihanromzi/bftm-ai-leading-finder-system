@@ -36,7 +36,8 @@ function FixLeafletIcons() {
 function RecenterMap({ center }: { center: Coordinates }) {
   const map = useMap()
   useEffect(() => {
-    map.setView(center, map.getZoom(), { animate: true })
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    map.setView(center, map.getZoom(), { animate: !reduceMotion })
   }, [center, map])
   return null
 }
@@ -102,8 +103,7 @@ function createCategoryIcon(category: string, fitScore: number, isActive: boolea
 const centerBranchIcon = L.divIcon({
   html: `
     <div style="position: relative; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;">
-      <div style="position: absolute; inset: 0; border-radius: 50%; background: rgba(0, 113, 227, 0.25); animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-      <div style="width: 30px; height: 30px; border-radius: 50%; background: #002D62; border: 2.5px solid #FFFFFF; box-shadow: 0 4px 12px rgba(0,45,98,0.4); display: flex; align-items: center; justify-content: center;">
+      <div style="width: 30px; height: 30px; border-radius: 50%; background: #06192F; border: 2.5px solid #FFFFFF; box-shadow: 0 4px 12px rgba(6,25,47,0.4); display: flex; align-items: center; justify-content: center;">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFB300" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
         </svg>

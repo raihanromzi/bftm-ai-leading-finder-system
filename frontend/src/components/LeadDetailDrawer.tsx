@@ -95,7 +95,7 @@ export default function LeadDetailDrawer({
   isEnriching = false,
 }: LeadDetailDrawerProps) {
   const [activeTab, setActiveTab] = useState<'wa' | 'visit'>('wa')
-  const [copied, setCopied] = useState(false)
+  const [copyState, setCopyState] = useState<'idle' | 'success' | 'error'>('idle')
 
   // Close on Escape key
   useEffect(() => {
@@ -129,11 +129,11 @@ export default function LeadDetailDrawer({
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(currentScript)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch (err) {
-      console.error('Failed to copy script:', err)
+      setCopyState('success')
+    } catch {
+      setCopyState('error')
     }
+    window.setTimeout(() => setCopyState('idle'), 2000)
   }
 
   // Clean phone number for WhatsApp link (e.g. +62 812-xxx -> 62812xxx)
@@ -407,18 +407,9 @@ export default function LeadDetailDrawer({
                 onClick={handleCopy}
                 className="apple-pressable flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-medium focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
               >
-                {copied ? (
-                  <>
-                    <Check size={14} className="text-emerald-400" />
-                    <span>Tersalin ke Clipboard!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy size={14} />
-                    <span>Salin Naskah</span>
-                  </>
-                )}
+                {copyState === 'success' ? <><Check size={14} className="text-emerald-400" /><span>Tersalin</span></> : <><Copy size={14} /><span>Salin Naskah</span></>}
               </button>
+              <span className="sr-only" aria-live="polite">{copyState === 'success' ? 'Naskah tersalin ke clipboard.' : copyState === 'error' ? 'Naskah tidak dapat disalin. Salin teks secara manual.' : ''}</span>
 
               {activeTab === 'wa' && waUrl && (
                 <a

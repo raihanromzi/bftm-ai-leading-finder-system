@@ -117,11 +117,6 @@ export default function LeadsTable({
     })
   }, [leads, activeCategory, searchQuery])
 
-  const toggleSelect = (id: number, e: React.MouseEvent) => {
-    e.stopPropagation()
-    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
-  }
-
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
       setSelectedIds(filteredLeads.map((l) => l.id))
@@ -165,7 +160,9 @@ export default function LeadsTable({
               className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
             />
             <input
-              type="text"
+              type="search"
+              name="lead-search"
+              autoComplete="off"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Cari nama prospek, alamat, atau produk…"
@@ -177,7 +174,7 @@ export default function LeadsTable({
                 type="button"
                 onClick={() => setSearchQuery('')}
                 aria-label="Hapus pencarian"
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+                className="apple-pressable absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md text-neutral-400 hover:text-neutral-600 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
               >
                 <X size={13} />
               </button>
@@ -295,8 +292,7 @@ export default function LeadsTable({
               return (
                 <tr
                   key={lead.id}
-                  onClick={() => onSelectLead(lead)}
-                  className={`group cursor-pointer transition-colors duration-150 ${
+                  className={`group transition-colors duration-150 ${
                     isActive
                       ? 'bg-blue-50/70'
                       : isSelected
@@ -305,35 +301,32 @@ export default function LeadsTable({
                   }`}
                 >
                   {/* Checkbox */}
-                  <td
-                    className="w-10 px-3 py-3 text-center"
-                    onClick={(e) => toggleSelect(lead.id, e)}
-                  >
+                  <td className="w-10 px-3 py-3 text-center">
                     <input
+                      id={`lead-${lead.id}`}
                       type="checkbox"
                       aria-label={`Pilih ${lead.name}`}
                       checked={isSelected}
-                      onChange={() => {}}
+                      onChange={() => setSelectedIds((current) => current.includes(lead.id) ? current.filter((id) => id !== lead.id) : [...current, lead.id])}
                       className="rounded border-neutral-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                     />
                   </td>
 
                   {/* Name & Address */}
                   <td className="px-3 py-3 min-w-[180px] max-w-[280px]">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-neutral-900 group-hover:text-blue-600 transition-colors truncate">
-                        {lead.name}
+                    <button
+                      type="button"
+                      onClick={() => onSelectLead(lead)}
+                      className="apple-pressable block max-w-full rounded-md text-left focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="font-semibold text-neutral-900 group-hover:text-blue-600 transition-colors truncate">
+                          {lead.name}
+                        </span>
+                        {isEnriched && <span title="Sinyal sudah diperkaya ScrapeGraphAI" className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0" />}
                       </span>
-                      {isEnriched && (
-                        <span
-                          title="Sinyal sudah diperkaya ScrapeGraphAI"
-                          className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0"
-                        />
-                      )}
-                    </div>
-                    <p className="text-[11px] text-neutral-400 truncate mt-0.5">
-                      {lead.address}
-                    </p>
+                      <span className="block text-[11px] text-neutral-400 truncate mt-0.5">{lead.address}</span>
+                    </button>
                   </td>
 
                   {/* Category */}
