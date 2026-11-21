@@ -1,4 +1,4 @@
-name: CI → Deploy to Vercel
+name: CI/CD → Deploy to Vercel (Development)
 
 on:
   push:
@@ -7,17 +7,19 @@ on:
     branches: [main]
 
 env:
-  # Vercel project settings — set these in GitHub → Settings → Secrets
+  # Frontend Vercel settings
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+  # Backend Vercel settings (if separate project)
+  VERCEL_BACKEND_PROJECT_ID: ${{ secrets.VERCEL_BACKEND_PROJECT_ID }}
 
 jobs:
   # ─────────────────────────────────────────────────────────────────────────
-  # JOB 1: Lint & Build (runs on every push and PR)
+  # JOB 1: Lint & Build Frontend (every push and PR)
   # ─────────────────────────────────────────────────────────────────────────
-  ci:
-    name: Lint & Build
+  frontend-ci:
+    name: Frontend - Lint & Build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -47,12 +49,53 @@ jobs:
         run: npm run build
 
   # ─────────────────────────────────────────────────────────────────────────
-  # JOB 2: Deploy to Vercel (runs only on push to main, after CI passes)
+  # JOB 2: Backend Validation (FastAPI syntax check)
   # ─────────────────────────────────────────────────────────────────────────
-  deploy:
-    name: Deploy to Vercel (Production)
+  backend-ci:
+    name: Backend - Validation
     runs-on: ubuntu-latest
-    needs: ci
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Syntax check Python files
+        run: |
+          python -m py_compile main.py app/config.py app/database.py app/models.py
+          python -m py_compile app/seed_branches.py app/services/product_matching.py
+          python -m py_compile app/routers/health.py app/routers/branches.py app/routers/discover.py app/routers/leads.py
+
+      - name: Test product matching logic
+        run: |
+          python -c "
+          from app.services.product_matching import match_product
+          assert match_product('school')['fit_score'] == 85
+          assert match_product('cafe')['fit_score'] == 70
+          print('✓ Product matching tests pass')
+          "
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # JOB 3: Deploy Frontend to Vercel (only on push to main, after CI passes)
+  # ─────────────────────────────────────────────────────────────────────────
+  deploy-frontend:
+    name: Deploy Frontend to Vercel
+    runs-on: ubuntu-latest
+    needs: frontend-ci
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     defaults:
       run:
@@ -63,19 +106,78 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Vercel CLI
-        run: npm install --global vercel@latest
+        run: npm install -g vercel@latest
 
-      - name: Pull Vercel environment info
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Pull Vercel environment
+        run: vercel pull --yes --environment=development --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build project artifacts
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Deploy to Vercel (production)
+      - name: Deploy to Vercel (Development)
         id: deploy
         run: |
-          url=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          url=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
           echo "deployment_url=$url" >> $GITHUB_OUTPUT
+          echo "✅ Frontend deployed → $url"
 
-      - name: Print deployment URL
-        run: echo "✅ Deployed → ${{ steps.deploy.outputs.deployment_url }}"
+      - name: Print deployment summary
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Frontend Deployment Complete"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "URL: ${{ steps.deploy.outputs.deployment_url }}"
+          echo "Environment: Development"
+          echo "Branch: main"
+          echo "Timestamp: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # JOB 4: Deploy Backend to Vercel (only on push to main, after CI passes)
+  # (Optional: if you have a separate backend Vercel project)
+  # ─────────────────────────────────────────────────────────────────────────
+  deploy-backend:
+    name: Deploy Backend to Vercel
+    runs-on: ubuntu-latest
+    needs: backend-ci
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && secrets.VERCEL_BACKEND_PROJECT_ID != ''
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel environment
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_BACKEND_PROJECT_ID }}
+        run: vercel pull --yes --environment=development --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build backend artifacts
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_BACKEND_PROJECT_ID }}
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to Vercel (Development)
+        id: deploy-backend
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_BACKEND_PROJECT_ID }}
+        run: |
+          url=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "deployment_url=$url" >> $GITHUB_OUTPUT
+          echo "✅ Backend deployed → $url"
+
+      - name: Print deployment summary
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Backend Deployment Complete"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "URL: ${{ steps.deploy-backend.outputs.deployment_url }}"
+          echo "Environment: Development"
+          echo "Branch: main"
+          echo "Timestamp: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
