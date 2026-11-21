@@ -7,21 +7,17 @@ import {
   CalendarCheck,
   ChevronRight,
   CircleGauge,
-  Compass,
   Download,
   Factory,
   GraduationCap,
-  Heart,
   Loader2,
   LocateFixed,
   MapPin,
   Radio,
   Search,
-  SlidersHorizontal,
   Sparkles,
   Store,
   Trophy,
-  UsersRound,
   X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -50,7 +46,6 @@ interface Branch {
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-
 const filters: Array<{ id: FilterId; label: string; icon: React.ElementType }> = [
   { id: 'all', label: 'Semua prospek', icon: MapPin },
   { id: 'education', label: 'Sekolah & kampus', icon: GraduationCap },
@@ -68,9 +63,16 @@ function matchesFilter(lead: LeadItem, filter: FilterId) {
 
 function productColor(product: string) {
   const value = product.toLowerCase()
-  if (value.includes('merchant') || value.includes('edc')) return 'bg-amber-50 text-amber-700 ring-amber-200'
-  if (value.includes('simpel') || value.includes('payroll')) return 'bg-blue-50 text-blue-700 ring-blue-200'
-  return 'bg-violet-50 text-violet-700 ring-violet-200'
+  if (value.includes('merchant') || value.includes('edc')) return 'is-merchant'
+  if (value.includes('simpel') || value.includes('payroll')) return 'is-payroll'
+  return 'is-campus'
+}
+
+function leadDistanceKm(lead: LeadItem, center: [number, number]) {
+  const [originLat, originLng] = center
+  const latDistance = (lead.latitude - originLat) * 111.32
+  const lngDistance = (lead.longitude - originLng) * 111.32 * Math.cos((originLat * Math.PI) / 180)
+  return Math.max(0.1, Math.hypot(latDistance, lngDistance)).toFixed(1)
 }
 
 export default function RadarWorkspace() {
@@ -83,6 +85,7 @@ export default function RadarWorkspace() {
   const [enriching, setEnriching] = useState(false)
   const [mapCenter, setMapCenter] = useState<[number, number]>([-6.193, 106.8237])
   const [selectedLead, setSelectedLead] = useState<LeadItem | null>(null)
+  const [hoveredLead, setHoveredLead] = useState<LeadItem | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [notice, setNotice] = useState('')
   const [query, setQuery] = useState('')
@@ -122,10 +125,7 @@ export default function RadarWorkspace() {
 
   const visibleLeads = useMemo(() => {
     const search = query.trim().toLowerCase()
-    return leads.filter((lead) => {
-      if (!matchesFilter(lead, activeFilter)) return false
-      return !search || [lead.name, lead.address, lead.recommended_product].some((value) => value.toLowerCase().includes(search))
-    })
+    return leads.filter((lead) => matchesFilter(lead, activeFilter) && (!search || [lead.name, lead.address, lead.recommended_product].some((value) => value.toLowerCase().includes(search))))
   }, [activeFilter, leads, query])
 
   const stats = useMemo(() => ({
@@ -160,6 +160,7 @@ export default function RadarWorkspace() {
   const handleLocationChange = (coordinates: [number, number]) => {
     setMapCenter(coordinates)
     setSelectedLead(null)
+    setHoveredLead(null)
     setIsDrawerOpen(false)
     setLeads([])
     discoverAt(coordinates)
@@ -195,6 +196,7 @@ export default function RadarWorkspace() {
       }
       setLeads((current) => current.map(withEnrichment))
       setSelectedLead((current) => current ? withEnrichment(current) : current)
+      setHoveredLead((current) => current ? withEnrichment(current) : current)
       setNotice(`${results.length} prospek selesai dianalisis.`)
     } catch {
       setNotice('Analisis gagal. Periksa koneksi backend, lalu coba lagi.')
@@ -218,76 +220,100 @@ export default function RadarWorkspace() {
     }
   }
 
-  const selectLead = (lead: LeadItem) => {
+  const openLeadDetail = (lead: LeadItem) => {
     setSelectedLead(lead)
+    setHoveredLead(null)
     setIsDrawerOpen(true)
   }
 
+  const panelLead = hoveredLead && !isDrawerOpen ? hoveredLead : null
+
   return (
-    <div className="map-shell">
+    <div className="radar-workspace">
       <a href="#radar-map" className="skip-link">Lewati ke peta</a>
-      <section className="map-list-panel" aria-label="Daftar prospek">
-        <header className="map-list-header">
+      <main id="radar-map" className="radar-map-canvas" tabIndex={-1}>
+        <RadarMap
+          center={mapCenter}
+          radiusKm={radius}
+          leads={visibleLeads}
+          selectedLeadId={selectedLead?.id}
+          onLocationChange={handleLocationChange}
+          onHoverLead={setHoveredLead}
+          onSelectLead={openLeadDetail}
+        />
+        <div className="radar-map-location"><LocateFixed size={15} /><span>{mapCenter[0].toFixed(4)}, {mapCenter[1].toFixed(4)}</span></div>
+      </main>
+
+      <section className="radar-sidebar" aria-label="Daftar prospek">
+        <header className="radar-sidebar-header">
           <div>
-            <h1>BFTM Radar</h1>
-            <p>{selectedBranch?.city || 'Wilayah cabang'} · {radius} km</p>
+            <div className="flex items-center gap-2"><h1>BFTM Radar</h1><span className={`radar-live is-${health}`}>{health === 'ok' ? 'LIVE' : health === 'error' ? 'OFFLINE' : 'CEK'}</span></div>
+            <p>{selectedBranch?.city || 'Wilayah cabang'} <span>·</span> <strong>{radius} km</strong></p>
           </div>
-          <Button variant="ghost" size="icon-sm" onClick={handleExport} disabled={!leads.length} aria-label="Ekspor prospek CSV"><Download size={15} /></Button>
+          <Button variant="ghost" size="icon" onClick={handleExport} disabled={!leads.length} aria-label="Ekspor prospek CSV"><Download size={17} /></Button>
         </header>
 
-        <div className="map-branch-control">
-          <label htmlFor="branch-select">Kantor cabang</label>
-          <select id="branch-select" name="branch" autoComplete="off" value={selectedBranch?.id || ''} onChange={(event) => {
-            const branch = branches.find((item) => item.id === Number(event.target.value))
-            if (!branch) return
-            setSelectedBranch(branch)
-            setMapCenter([branch.latitude, branch.longitude])
-          }}>
-            {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name} ({branch.city})</option>)}
-          </select>
-          <div className="map-radius-row">
-            <label htmlFor="radar-radius">Jangkauan <strong>{radius} km</strong></label>
+        <div className="radar-sidebar-scroll">
+          <section className="radar-control-section">
+            <label htmlFor="branch-select">Kantor cabang</label>
+            <select id="branch-select" name="branch" autoComplete="off" value={selectedBranch?.id || ''} onChange={(event) => {
+              const branch = branches.find((item) => item.id === Number(event.target.value))
+              if (!branch) return
+              setSelectedBranch(branch)
+              setMapCenter([branch.latitude, branch.longitude])
+              setHoveredLead(null)
+            }}>
+              {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name} ({branch.city})</option>)}
+            </select>
+            <div className="radar-radius-row">
+              <label htmlFor="radar-radius">Jangkauan</label><output>{radius} km</output>
+            </div>
             <input id="radar-radius" name="radius" type="range" min="1" max="25" step="1" value={radius} onChange={(event) => setRadius(Number(event.target.value))} />
-          </div>
-          <Button onClick={() => discoverAt()} disabled={loading} className="w-full">
-            {loading ? <Loader2 className="animate-spin" /> : <Radio />}{loading ? 'Memindai…' : 'Pindai wilayah'}
-          </Button>
-        </div>
+            <Button onClick={() => discoverAt()} disabled={loading} className="radar-primary-button w-full">
+              {loading ? <Loader2 className="animate-spin" /> : <Radio />}{loading ? 'Memindai…' : 'Pindai wilayah'}
+            </Button>
+          </section>
 
-        <div className="map-search-wrap">
-          <Search size={16} aria-hidden="true" />
-          <input type="search" name="lead-search" autoComplete="off" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cari prospek…" aria-label="Cari prospek" />
-          {query && <button type="button" onClick={() => setQuery('')} aria-label="Hapus pencarian"><X size={14} /></button>}
-        </div>
+          <section className="radar-filter-section">
+            <div className="radar-search-wrap">
+              <Search size={18} aria-hidden="true" />
+              <input type="search" name="lead-search" autoComplete="off" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cari prospek…" aria-label="Cari prospek" />
+              {query && <button type="button" onClick={() => setQuery('')} aria-label="Hapus pencarian"><X size={15} /></button>}
+            </div>
+            <nav className="radar-filter-grid" aria-label="Filter kategori">
+              {filters.map(({ id, label, icon: Icon }) => {
+                const count = leads.filter((lead) => matchesFilter(lead, id)).length
+                return <button key={id} type="button" className={activeFilter === id ? 'is-active' : ''} onClick={() => setActiveFilter(id)}><Icon size={15} aria-hidden="true" /><span>{label}</span><strong>{count}</strong></button>
+              })}
+            </nav>
+          </section>
 
-        <nav className="map-filter-list" aria-label="Filter kategori">
-          {filters.map(({ id, label, icon: Icon }) => {
-            const count = leads.filter((lead) => matchesFilter(lead, id)).length
-            return <button key={id} type="button" className={activeFilter === id ? 'is-active' : ''} onClick={() => setActiveFilter(id)}><Icon size={15} aria-hidden="true" /><span>{label}</span><strong>{count}</strong></button>
-          })}
-        </nav>
-
-        <div className="map-list-title"><div><h2>Prospek terdeteksi</h2><p>{visibleLeads.length} dari {leads.length} entitas</p></div><span>{stats.priority} prioritas</span></div>
-        <div className="map-lead-scroll">
-          {!leads.length ? <div className="map-empty"><MapPin size={20} /><strong>Belum ada prospek</strong><p>Pilih cabang, atur jangkauan, lalu pindai wilayah.</p></div> : visibleLeads.map((lead) => (
-            <article key={lead.id} className={`map-lead-card ${selectedLead?.id === lead.id ? 'is-selected' : ''}`}>
-              <button type="button" className="map-lead-open" onClick={() => selectLead(lead)} aria-label={`Buka detail ${lead.name}`}>
-                <span className="map-lead-icon"><Building2 size={17} /></span>
-                <span className="min-w-0 flex-1 text-left"><strong>{lead.name}</strong><small>{lead.address}</small></span>
-                <span className="map-score">{lead.fit_score}%</span>
-              </button>
-              <div className="map-lead-meta"><span className={`map-product ${productColor(lead.recommended_product)}`}>{lead.recommended_product.split('&')[0].trim()}</span>{lead.enrichment?.pitch_script_wa && <span className="map-enriched"><Sparkles size={12} /> Diperkaya</span>}</div>
-              <div className="map-lead-actions"><Button variant="outline" size="sm" onClick={() => selectLead(lead)}>Lihat naskah <ChevronRight /></Button>{!lead.enrichment?.pitch_script_wa && <Button variant="ghost" size="sm" onClick={() => handleEnrich([lead.id])} disabled={enriching}>{enriching ? <Loader2 className="animate-spin" /> : <Sparkles />} Deep-dive</Button>}</div>
-            </article>
-          ))}
+          <section className="radar-results-heading"><div><h2>Prospek terdeteksi</h2><p>{visibleLeads.length} dari {leads.length} entitas</p></div><span>{stats.priority} prioritas</span></section>
+          <section className="radar-results-list" aria-label="Hasil prospek">
+            {!leads.length ? <div className="radar-empty"><MapPin size={22} /><strong>Belum ada prospek</strong><p>Pilih cabang, atur jangkauan, lalu pindai wilayah.</p></div> : visibleLeads.map((lead) => (
+              <article key={lead.id} className={`radar-lead-card ${selectedLead?.id === lead.id ? 'is-selected' : ''}`}>
+                <button type="button" className="radar-lead-summary" onClick={() => openLeadDetail(lead)} aria-label={`Buka detail ${lead.name}`}>
+                  <span className="radar-lead-icon"><Building2 size={20} /></span>
+                  <span className="min-w-0 flex-1 text-left"><strong>{lead.name}</strong><small>Area sekitar titik pemindaian ({leadDistanceKm(lead, mapCenter)} km)</small></span>
+                  <span className="radar-fit-score">{lead.fit_score}%</span>
+                </button>
+                <span className={`radar-product-tag ${productColor(lead.recommended_product)}`}>{lead.recommended_product.split('&')[0].trim()}</span>
+                <div className="radar-lead-actions"><Button variant="outline" onClick={() => openLeadDetail(lead)}>Lihat naskah <ChevronRight /></Button>{!lead.enrichment?.pitch_script_wa && <Button variant="ghost" onClick={() => handleEnrich([lead.id])} disabled={enriching}>{enriching ? <Loader2 className="animate-spin" /> : <Sparkles />} Deep-dive</Button>}</div>
+              </article>
+            ))}
+          </section>
         </div>
-        <footer className="map-list-footer"><span><CircleGauge size={14} /> {stats.priority} prioritas</span><span><CalendarCheck size={14} /> {stats.scheduled} kunjungan</span><span><Trophy size={14} /> {stats.won} closing</span></footer>
+        <footer className="radar-sidebar-footer"><span><CircleGauge size={14} /> <strong>{stats.priority}</strong> prioritas</span><span><CalendarCheck size={14} /> <strong>{stats.scheduled}</strong> kunjungan</span><span><Trophy size={14} /> <strong>{stats.won}</strong> closing</span></footer>
       </section>
 
-      <main id="radar-map" className="map-canvas" tabIndex={-1}>
-        <RadarMap center={mapCenter} radiusKm={radius} leads={visibleLeads} selectedLeadId={selectedLead?.id} onLocationChange={handleLocationChange} onSelectLead={selectLead} />
-        <div className="map-canvas-location"><LocateFixed size={15} /><span>{mapCenter[0].toFixed(4)}, {mapCenter[1].toFixed(4)}</span></div>
-      </main>
+      {panelLead && <aside className="radar-hover-card" onMouseLeave={() => setHoveredLead(null)} aria-label={`Ringkasan ${panelLead.name}`}>
+        <button type="button" className="radar-hover-close" onClick={() => setHoveredLead(null)} aria-label="Tutup ringkasan"><X size={18} /></button>
+        <div className="radar-hover-meta"><span>{panelLead.category}</span><strong>{panelLead.fit_score}% Fit</strong></div>
+        <h2>{panelLead.name}</h2>
+        <p><MapPin size={16} /> Area sekitar titik pemindaian ({leadDistanceKm(panelLead, mapCenter)} km)</p>
+        <div className="radar-hover-product">{panelLead.recommended_product}</div>
+        <Button className="radar-primary-button w-full" onClick={() => openLeadDetail(panelLead)}>Buka Detail & Naskah</Button>
+      </aside>}
 
       <p className="sr-only" aria-live="polite">{notice}</p>
       <LeadDetailDrawer lead={selectedLead} isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} onStatusChange={handleStatusChange} onEnrichLead={(id) => handleEnrich([id])} isEnriching={enriching} />

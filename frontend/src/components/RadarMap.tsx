@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { Circle, MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet'
+import { Circle, MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { LeadItem } from './LeadDetailDrawer'
@@ -14,12 +14,14 @@ interface RadarMapProps {
   leads: LeadItem[]
   selectedLeadId?: number | null
   onLocationChange: (coordinates: Coordinates) => void
+  onHoverLead: (lead: LeadItem | null) => void
   onSelectLead: (lead: LeadItem) => void
 }
 
+const JABODETABEK_MAX_BOUNDS: L.LatLngBoundsExpression = [[-7.06, 106.09], [-5.72, 107.58]]
+
 function FixLeafletIcons() {
   const map = useMap()
-
   useEffect(() => {
     delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl
     L.Icon.Default.mergeOptions({
@@ -29,216 +31,61 @@ function FixLeafletIcons() {
     })
     map.attributionControl.setPrefix('')
   }, [map])
-
   return null
 }
 
 function RecenterMap({ center }: { center: Coordinates }) {
   const map = useMap()
   useEffect(() => {
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    map.setView(center, map.getZoom(), { animate: !reduceMotion })
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    map.setView(center, map.getZoom(), { animate: !reducedMotion })
   }, [center, map])
   return null
 }
 
 function MapClickHandler({ onLocationChange }: Pick<RadarMapProps, 'onLocationChange'>) {
-  useMapEvents({
-    click: ({ latlng }) => onLocationChange([latlng.lat, latlng.lng]),
-  })
+  useMapEvents({ click: ({ latlng }) => onLocationChange([latlng.lat, latlng.lng]) })
   return null
 }
 
-// Helper to generate Apple-style SVG DivIcons for Leaflet
-function createCategoryIcon(category: string, fitScore: number, isActive: boolean) {
-  let bgColor = '#002D62' // default Mandiri navy
-  let svgPath = ''
-
-  const cat = category.toLowerCase()
-  if (cat.includes('school') || cat.includes('sekolah') || cat.includes('university') || cat.includes('kampus')) {
-    bgColor = '#0071E3' // Apple blue
-    // Graduation Cap SVG
-    svgPath = '<path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 2 3 3 6 3s6-1 6-3v-5"/>'
-  } else if (cat.includes('cafe') || cat.includes('coffee') || cat.includes('restaurant') || cat.includes('kopi')) {
-    bgColor = '#D97706' // Warm Amber
-    // Coffee Cup SVG
-    svgPath = '<path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" x2="6" y1="2" y2="4"/><line x1="10" x2="10" y1="2" y2="4"/><line x1="14" x2="14" y1="2" y2="4"/>'
-  } else if (cat.includes('convenience') || cat.includes('store') || cat.includes('market') || cat.includes('ritel')) {
-    bgColor = '#059669' // Emerald
-    // Shopping Bag SVG
-    svgPath = '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>'
-  } else if (cat.includes('factory') || cat.includes('pabrik') || cat.includes('industri')) {
-    bgColor = '#475569' // Slate
-    // Factory SVG
-    svgPath = '<path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M17 18h1"/><path d="M12 18h1"/><path d="M7 18h1"/>'
-  } else {
-    bgColor = '#002D62' // Mandiri Navy
-    // Building SVG
-    svgPath = '<rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M16 14h.01"/>'
+function markerIcon(category: string, fitScore: number, isActive: boolean) {
+  const value = category.toLowerCase()
+  const type = /school|sekolah|univ|kampus/.test(value) ? 'education' : /factory|pabrik|industri/.test(value) ? 'industry' : /cafe|coffee|restaurant|kopi|store|market|ritel/.test(value) ? 'retail' : 'general'
+  const paths = {
+    education: '<path d="M3 10 12 5l9 5-9 5-9-5Z"/><path d="M7 13v4c0 1.7 2.2 3 5 3s5-1.3 5-3v-4"/><path d="M21 10v6"/>',
+    industry: '<path d="M3 21V9l6 4V9l6 4V5l6 4v12H3Z"/><path d="M7 21v-4h3v4m3 0v-4h3v4"/>',
+    retail: '<path d="M5 8h14l-1 12H6L5 8Z"/><path d="M8 8V6a4 4 0 0 1 8 0v2"/>',
+    general: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h.01M15 7h.01M9 11h.01M15 11h.01M10 21v-4h4v4"/>',
   }
-
-  const activeRing = isActive ? 'active' : ''
-
-  const html = `
-    <div class="pin-bubble ${activeRing}" style="background-color: ${bgColor};">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        ${svgPath}
-      </svg>
-      <span style="position: absolute; top: -6px; right: -6px; background: #FFFFFF; color: #1D1D1F; font-size: 9px; font-weight: 700; border-radius: 9999px; padding: 1px 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); font-family: -apple-system, sans-serif; font-variant-numeric: tabular-nums;">
-        ${fitScore}%
-      </span>
-    </div>
-  `
-
+  const color = { education: '#2563eb', industry: '#d97706', retail: '#0d9488', general: '#334155' }[type]
   return L.divIcon({
-    html,
     className: 'custom-radar-pin',
-    iconSize: [34, 34],
-    iconAnchor: [17, 17],
-    popupAnchor: [0, -20],
+    iconSize: [46, 46],
+    iconAnchor: [23, 23],
+    html: `<div class="radar-pin ${isActive ? 'is-active' : ''}" style="--pin-color:${color}"><span class="radar-pin-score">${fitScore}%</span><span class="radar-pin-core"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${paths[type]}</svg></span></div>`,
   })
 }
 
-// Center branch anchor pin
-const centerBranchIcon = L.divIcon({
-  html: `
-    <div style="position: relative; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;">
-      <div style="width: 30px; height: 30px; border-radius: 50%; background: #06192F; border: 2.5px solid #FFFFFF; box-shadow: 0 4px 12px rgba(6,25,47,0.4); display: flex; align-items: center; justify-content: center;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFB300" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
-        </svg>
-      </div>
-    </div>
-  `,
+const centerIcon = L.divIcon({
   className: 'custom-radar-pin',
-  iconSize: [38, 38],
-  iconAnchor: [19, 19],
-  popupAnchor: [0, -22],
+  iconSize: [42, 42],
+  iconAnchor: [21, 21],
+  html: '<div class="radar-origin-pin"><span></span></div>',
 })
 
-// Jabodetabek + 40 km outside Jabodetabek bounds
-const JABODETABEK_MAX_BOUNDS: L.LatLngBoundsExpression = [
-  [-7.06, 106.09],
-  [-5.72, 107.58],
-]
-
-export default function RadarMap({
-  center,
-  radiusKm,
-  leads,
-  selectedLeadId,
-  onLocationChange,
-  onSelectLead,
-}: RadarMapProps) {
+export default function RadarMap({ center, radiusKm, leads, selectedLeadId, onLocationChange, onHoverLead, onSelectLead }: RadarMapProps) {
   return (
-    <div className="relative w-full h-full">
-      <MapContainer
-        center={center}
-        zoom={12}
-        minZoom={10}
-        maxBounds={JABODETABEK_MAX_BOUNDS}
-        maxBoundsViscosity={1.0}
-        style={{ height: '100%', width: '100%' }}
-        zoomControl={false}
-      >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          maxZoom={19}
-        />
+    <div className="radar-map-root">
+      <MapContainer center={center} zoom={12} minZoom={10} maxBounds={JABODETABEK_MAX_BOUNDS} maxBoundsViscosity={1} style={{ height: '100%', width: '100%' }} zoomControl={false}>
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' maxZoom={19} />
         <FixLeafletIcons />
         <RecenterMap center={center} />
         <MapClickHandler onLocationChange={onLocationChange} />
-
-        {/* Center Branch Anchor */}
-        <Marker position={center} icon={centerBranchIcon}>
-          <Popup>
-            <div className="p-1">
-              <p className="text-xs font-semibold text-neutral-900">Titik Radar Cabang</p>
-              <p className="text-[11px] text-neutral-500 mt-0.5">
-                Pusat pemindaian radius {radiusKm}&nbsp;km
-              </p>
-            </div>
-          </Popup>
-        </Marker>
-
-        {/* Radar Coverage Circle */}
-        <Circle
-          center={center}
-          radius={radiusKm * 1_000}
-          pathOptions={{
-            color: '#0071E3',
-            weight: 1.5,
-            fillColor: '#0071E3',
-            fillOpacity: 0.08,
-            dashArray: '4, 6',
-          }}
-        />
-
-        {/* Discovered Leads POI */}
-        {leads.map((lead) => {
-          const isActive = selectedLeadId === lead.id
-          const icon = createCategoryIcon(lead.category, lead.fit_score, isActive)
-
-          return (
-            <Marker
-              key={lead.id}
-              position={[lead.latitude, lead.longitude]}
-              icon={icon}
-              eventHandlers={{
-                click: () => onSelectLead(lead),
-              }}
-            >
-              <Popup>
-                <div className="p-2 space-y-2 min-w-[210px] max-w-[260px]">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-700">
-                      {lead.category}
-                    </span>
-                    <span className="text-xs font-bold text-neutral-900 tabular-nums">
-                      {lead.fit_score}% Fit
-                    </span>
-                  </div>
-
-                  <div>
-                    <h4 className="text-xs font-bold text-neutral-900 leading-tight">
-                      {lead.name}
-                    </h4>
-                    <p className="text-[11px] text-neutral-500 mt-0.5 truncate">
-                      {lead.address}
-                    </p>
-                  </div>
-
-                  <div className="rounded-lg bg-blue-50/70 p-2 border border-blue-100">
-                    <p className="text-[10px] font-medium text-blue-900">
-                      {lead.recommended_product}
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onSelectLead(lead)
-                    }}
-                    className="apple-pressable w-full py-1.5 px-3 rounded-lg bg-neutral-900 text-white text-xs font-medium text-center hover:bg-neutral-800"
-                  >
-                    Buka Detail & Naskah
-                  </button>
-                </div>
-              </Popup>
-            </Marker>
-          )
-        })}
+        <Marker position={center} icon={centerIcon} />
+        <Circle center={center} radius={radiusKm * 1000} pathOptions={{ color: '#2563eb', weight: 1.75, fillColor: '#2563eb', fillOpacity: .08, dashArray: '6, 6' }} />
+        {leads.map((lead) => <Marker key={lead.id} position={[lead.latitude, lead.longitude]} icon={markerIcon(lead.category, lead.fit_score, selectedLeadId === lead.id)} eventHandlers={{ mouseover: () => onHoverLead(lead), mouseout: () => onHoverLead(null), click: () => onSelectLead(lead) }} />)}
       </MapContainer>
-
-      {/* Floating map hint */}
-      <div className="absolute top-4 right-4 z-[400] pointer-events-none">
-        <div className="px-3 py-1.5 rounded-full bg-white/80 backdrop-blur-md border border-black/[0.08] shadow-sm text-[11px] font-medium text-neutral-600 flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-          <span>Klik peta untuk pindah koordinat</span>
-        </div>
-      </div>
+      <div className="radar-map-hint"><span></span>Klik peta untuk pindah koordinat</div>
     </div>
   )
 }
