@@ -60,4 +60,7 @@ jobs:
       - run: npm install --global vercel@66.1.0
       - run: vercel pull --yes --environment=development --token="$VERCEL_TOKEN"
       - run: vercel build --token="$VERCEL_TOKEN"
-      - run: vercel deploy --prebuilt --token="$VERCEL_TOKEN"
+      - id: deploy
+        run: echo "url=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")" >> "$GITHUB_OUTPUT"
+      - name: Output deployment URL
+        run: echo "🚀 Frontend deployed to ${{ steps.deploy.outputs.url }}"
