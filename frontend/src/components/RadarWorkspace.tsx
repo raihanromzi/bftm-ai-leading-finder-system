@@ -96,7 +96,7 @@ export default function RadarWorkspace() {
     return { highFit, scheduled, won }
   }, [leads])
 
-  const handleScan = async () => {
+  const discoverAt = async (coordinates: [number, number] = mapCenter) => {
     setLoading(true)
     setNotice('')
     try {
@@ -104,8 +104,8 @@ export default function RadarWorkspace() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          latitude: mapCenter[0],
-          longitude: mapCenter[1],
+          latitude: coordinates[0],
+          longitude: coordinates[1],
           radius_km: radius,
         }),
       })
@@ -123,6 +123,16 @@ export default function RadarWorkspace() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleScan = () => discoverAt()
+
+  const handleLocationChange = (coordinates: [number, number]) => {
+    setMapCenter(coordinates)
+    setSelectedLead(null)
+    setIsDrawerOpen(false)
+    setLeads([])
+    discoverAt(coordinates)
   }
 
   const handleStatusChange = async (leadId: number, status: string) => {
@@ -325,7 +335,7 @@ export default function RadarWorkspace() {
               </div>
               <span><span className="radar-signal" aria-hidden="true" />Peta langsung</span>
             </div>
-            <RadarMap center={mapCenter} radiusKm={radius} leads={leads} selectedLeadId={selectedLead?.id} onLocationChange={setMapCenter} onSelectLead={selectLead} />
+            <RadarMap center={mapCenter} radiusKm={radius} leads={leads} selectedLeadId={selectedLead?.id} onLocationChange={handleLocationChange} onSelectLead={selectLead} />
           </section>
 
           <section className="radar-lead-section" aria-labelledby="lead-ledger-heading">

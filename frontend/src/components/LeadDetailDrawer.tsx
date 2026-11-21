@@ -149,7 +149,7 @@ export default function LeadDetailDrawer({
       {/* Backdrop */}
       <div
         onClick={onClose}
-        className={`fixed inset-0 z-40 bg-black/25 backdrop-blur-[2px] transition-opacity duration-200 ${
+        className={`fixed inset-0 z-[1100] bg-black/25 backdrop-blur-[2px] transition-opacity duration-200 ${
           isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
         style={{
@@ -163,7 +163,7 @@ export default function LeadDetailDrawer({
         role="dialog"
         aria-modal="true"
         aria-labelledby="drawer-title"
-        className={`fixed top-0 right-0 z-50 h-full w-full max-w-lg bg-white/95 backdrop-blur-2xl border-l border-black/[0.08] shadow-2xl flex flex-col justify-between overflow-hidden transition-transform duration-300 ${
+        className={`fixed top-0 right-0 z-[1200] h-full w-full max-w-lg bg-white/95 backdrop-blur-2xl border-l border-black/[0.08] shadow-2xl flex flex-col justify-between overflow-hidden transition-transform duration-300 ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
         style={{
