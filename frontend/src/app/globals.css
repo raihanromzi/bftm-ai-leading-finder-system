@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+:root {
+  --navy: #003366;
+  --gold: #FFB300;
+  --white: #FFFFFF;
+  --muted: #6B7280;
+  --bg: #F0F4F8;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: var(--font-inter), 'Inter', sans-serif;
+  background: var(--bg);
+  color: #111827;
+  -webkit-font-smoothing: antialiased;
+}
+
+.btn {
+  transition: transform 160ms var(--ease-out), background-color 160ms ease, opacity 160ms ease;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn { transition: none; }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover { opacity: 0.9; }
+}
