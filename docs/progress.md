@@ -1,8 +1,20 @@
-# MVP Build Progress — All Features Complete ✅
+# MVP Build Progress — SHIPPED ✅
 
 ## Summary
-All 5 Tickets implemented and deployed to Vercel. Frontend ↔ Backend fully connected. 
-All endpoints functional: health, branches, discover (mock), enrich (mock pitch generation), status update, CSV export.
+All 5 Tickets implemented, deployed, and **LIVE in production**. 
+Frontend ↔ Backend fully connected, CORS working, regional scope restricted to Jakarta/Jabodetabek/Cikarang/Karawang.
+
+**Live URLs:**
+- **Frontend:** https://frontend-en92sazwe-raihan-romzi-rs-projects.vercel.app
+- **Backend:** https://backend-rm6q8lu21-raihan-romzi-rs-projects.vercel.app
+
+All endpoints functional and verified:
+- Health check: ✅ Backend connected signal in UI
+- Branch presets: ✅ 7 Jabodetabek locations
+- Discovery: ✅ Mock leads with regional boundary enforcement
+- Enrichment: ✅ Mock pitch script generation (Bahasa Indonesia)
+- Status updates: ✅ Validated lifecycle (New/Contacted/Visit Scheduled/Won/Dropped)
+- CSV export: ✅ Full lead data download
 
 ## Completed Tickets
 | Ticket | Feature | Status | Endpoints |
