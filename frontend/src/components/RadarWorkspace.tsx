@@ -15,7 +15,6 @@ import {
   MapPin,
   Radio,
   Search,
-  Sparkles,
   Store,
   Trophy,
   X,
@@ -82,7 +81,7 @@ export default function RadarWorkspace() {
   const [radius, setRadius] = useState(10)
   const [leads, setLeads] = useState<LeadItem[]>([])
   const [loading, setLoading] = useState(false)
-  const [enriching, setEnriching] = useState(false)
+  const [enrichingIds, setEnrichingIds] = useState<Set<number>>(new Set())
   const [mapCenter, setMapCenter] = useState<[number, number]>([-6.193, 106.8237])
   const [selectedLead, setSelectedLead] = useState<LeadItem | null>(null)
   const [hoveredLead, setHoveredLead] = useState<LeadItem | null>(null)
@@ -184,7 +183,7 @@ export default function RadarWorkspace() {
 
   const handleEnrich = async (leadIds: number[]) => {
     if (!leadIds.length) return
-    setEnriching(true)
+    setEnrichingIds((prev) => new Set([...prev, ...leadIds]))
     try {
       const response = await fetch(`${API_URL}/api/leads/enrich`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lead_ids: leadIds }) })
       if (!response.ok) throw new Error('Enrichment failed')
@@ -201,7 +200,7 @@ export default function RadarWorkspace() {
     } catch {
       setNotice('Analisis gagal. Periksa koneksi backend, lalu coba lagi.')
     } finally {
-      setEnriching(false)
+      setEnrichingIds((prev) => { const next = new Set(prev); leadIds.forEach((id) => next.delete(id)); return next })
     }
   }
 
@@ -298,7 +297,7 @@ export default function RadarWorkspace() {
                   <span className="radar-fit-score">{lead.fit_score}%</span>
                 </button>
                 <span className={`radar-product-tag ${productColor(lead.recommended_product)}`}>{lead.recommended_product.split('&')[0].trim()}</span>
-                <div className="radar-lead-actions"><Button variant="outline" onClick={() => openLeadDetail(lead)}>Lihat naskah <ChevronRight /></Button>{!lead.enrichment?.pitch_script_wa && <Button variant="ghost" onClick={() => handleEnrich([lead.id])} disabled={enriching}>{enriching ? <Loader2 className="animate-spin" /> : <Sparkles />} Deep-dive</Button>}</div>
+                <div className="radar-lead-actions"><Button variant="outline" onClick={() => openLeadDetail(lead)}>Lihat Detail <ChevronRight /></Button></div>
               </article>
             ))}
           </section>
@@ -312,11 +311,11 @@ export default function RadarWorkspace() {
         <h2>{panelLead.name}</h2>
         <p><MapPin size={16} /> Area sekitar titik pemindaian ({leadDistanceKm(panelLead, mapCenter)} km)</p>
         <div className="radar-hover-product">{panelLead.recommended_product}</div>
-        <Button className="radar-primary-button w-full" onClick={() => openLeadDetail(panelLead)}>Buka Detail & Naskah</Button>
+        <Button className="radar-primary-button w-full" onClick={() => openLeadDetail(panelLead)}>Lihat Detail</Button>
       </aside>}
 
       <p className="sr-only" aria-live="polite">{notice}</p>
-      <LeadDetailDrawer lead={selectedLead} isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} onStatusChange={handleStatusChange} onEnrichLead={(id) => handleEnrich([id])} isEnriching={enriching} />
+      <LeadDetailDrawer lead={selectedLead} isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} onStatusChange={handleStatusChange} onEnrichLead={(id) => handleEnrich([id])} isEnriching={selectedLead ? enrichingIds.has(selectedLead.id) : false} />
     </div>
   )
 }

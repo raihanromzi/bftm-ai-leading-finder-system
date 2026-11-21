@@ -7,11 +7,14 @@ class Settings(BaseSettings):
 
     google_places_api_key: str = ""
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-3.5-flash-lite"
+    gemini_model: str = "gemini-2.0-flash"
     openai_api_key: str = ""
     frontend_origin: str = "http://localhost:3000"
-    # Use in-memory SQLite on Vercel (ephemeral); file-based locally for dev
-    database_url: str = "sqlite:///:memory:" if os.environ.get("VERCEL") else "sqlite:///./bftm_radar.db"
+    # Prefer DATABASE_URL env var (Neon/Supabase Postgres); fall back to SQLite
+    database_url: str = (
+        os.environ.get("DATABASE_URL")
+        or ("sqlite:///:memory:" if os.environ.get("VERCEL") else "sqlite:///./bftm_radar.db")
+    )
 
 
 settings = Settings()

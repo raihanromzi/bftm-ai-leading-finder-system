@@ -14,6 +14,7 @@ from sqlmodel import Session, select
 from app.config import settings
 from app.database import get_session
 from app.models import Lead, LeadEnrichment
+from app.services.scraper import scrape_lead_context
 
 router = APIRouter()
 
@@ -46,20 +47,25 @@ def _mock_enrichment_for_lead(lead: Lead) -> tuple[dict, str, str]:
     return signals, pitch_wa, pitch_visit
 
 
-async def _gemini_enrichment_for_lead(lead: Lead) -> tuple[dict, str, str, str]:
-    """Generate lead enrichment signals and Bahasa Indonesia pitch scripts via Gemini free tier."""
+async def _gemini_enrichment_for_lead(lead: Lead, scraped_context: str = "") -> tuple[dict, str, str, str]:
+    """Generate lead enrichment signals and Bahasa Indonesia pitch scripts via Gemini grounded with ScrapeGraphAI."""
+    scraped_section = (
+        f"\nData publik & web yang berhasil diekstrak (ScrapeGraphAI):\n{scraped_context}\n"
+        if scraped_context else ""
+    )
     prompt = (
         "Anda adalah asisten BFTM (Branch Funding Transaction Manager) Bank Mandiri di wilayah Jabodetabek. "
-        "Buat analisis singkat dan naskah penawaran dalam Bahasa Indonesia yang sopan, ringkas, dan natural.\n"
+        "Gunakan data publik & web berikut (jika ada) untuk menghasilkan analisis akurat dan naskah penawaran dalam Bahasa Indonesia yang sopan, ringkas, dan natural.\n"
         f"Nama entitas: {lead.name}\n"
         f"Kategori: {lead.category}\n"
         f"Alamat: {lead.address}\n"
         f"Produk rekomendasi Mandiri: {lead.recommended_product}\n"
-        f"Target pengambil keputusan: {lead.pitch_angle}\n\n"
+        f"Target pengambil keputusan: {lead.pitch_angle}\n"
+        f"{scraped_section}\n"
         "Kembalikan JSON valid dengan field persis:\n"
         '{"employee_count": <integer estimasi karyawan/siswa>, '
-        '"current_payment": "<string metode pembayaran umum untuk kategori ini>", '
-        '"news_signal": "<1 kalimat ringkasan potensi akuisisi>", '
+        '"current_payment": "<string metode pembayaran saat ini atau umum>", '
+        '"news_signal": "<1 kalimat ringkasan potensi akuisisi berbasis data>", '
         '"pitch_wa": "<pesan WhatsApp singkat <= 3 kalimat>", '
         '"pitch_visit": "<skrip pembuka kunjungan tatap muka <= 3 kalimat>"}'
     )
@@ -95,7 +101,7 @@ async def _gemini_enrichment_for_lead(lead: Lead) -> tuple[dict, str, str, str]:
 
 @router.post("/leads/enrich")
 async def enrich_leads(req: EnrichRequest, session: Session = Depends(get_session)):
-    """Enrich selected leads using Gemini (free tier) with mock fallback."""
+    """Enrich selected leads using ScrapeGraphAI + Gemini with mock fallback."""
     if not req.lead_ids:
         raise HTTPException(status_code=400, detail="No lead IDs provided")
 
@@ -107,8 +113,22 @@ async def enrich_leads(req: EnrichRequest, session: Session = Depends(get_sessio
 
         ai_source = "mock"
         if settings.gemini_api_key:
+            scraped_context = ""
             try:
-                signals, pitch_wa, pitch_visit, ai_source = await _gemini_enrichment_for_lead(lead)
+                # Tier 1: Scrape real web / public directories via ScrapeGraphAI
+                scraped_context = await scrape_lead_context(
+                    name=lead.name,
+                    address=lead.address,
+                    category=lead.category,
+                    website=lead.website,
+                )
+            except Exception:
+                scraped_context = ""
+
+            try:
+                # Tier 2: Grounded synthesis & pitch generation via Gemini
+                signals, pitch_wa, pitch_visit, _ = await _gemini_enrichment_for_lead(lead, scraped_context)
+                ai_source = "scrapegraphai" if scraped_context else "gemini"
             except (httpx.HTTPError, KeyError, IndexError, ValueError, json.JSONDecodeError):
                 signals, pitch_wa, pitch_visit = _mock_enrichment_for_lead(lead)
         else:
@@ -171,7 +191,7 @@ async def list_leads(session: Session = Depends(get_session)):
     leads = session.exec(select(Lead)).all()
     result = []
     for lead in leads:
-        enrichment = session.query(LeadEnrichment).filter(LeadEnrichment.lead_id == lead.id).first()
+        enrichment = session.exec(select(LeadEnrichment).where(LeadEnrichment.lead_id == lead.id)).first()
         result.append({
             "id": lead.id,
             "place_id": lead.place_id,
@@ -213,7 +233,7 @@ async def export_leads(session: Session = Depends(get_session)):
 
     # Rows
     for lead in leads:
-        enrichment = session.query(LeadEnrichment).filter(LeadEnrichment.lead_id == lead.id).first()
+        enrichment = session.exec(select(LeadEnrichment).where(LeadEnrichment.lead_id == lead.id)).first()
         writer.writerow([
             lead.name,
             lead.category,

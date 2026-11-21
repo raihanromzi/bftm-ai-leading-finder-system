@@ -55,8 +55,11 @@ export default function LeadDetailDrawer({ lead, isOpen, onClose, onStatusChange
   const waPitch = lead.enrichment?.pitch_script_wa || `Selamat pagi/siang Bapak/Ibu pimpinan ${lead.name},\n\nPerkenalkan saya dari Tim Branch Funding Transaction Bank Mandiri. Kami mengamati potensi perkembangan bisnis ${lead.name} di kawasan ${lead.address.split(',')[0] || 'ini'}.\n\nKami ingin berbagi solusi perbankan khusus melalui ${lead.recommended_product || 'layanan transaksi Mandiri'} yang dapat mengoptimalkan pengelolaan likuiditas serta mempermudah transaksi harian.\n\nApakah kami dapat meminta waktu 5-10 menit untuk berbincang secara singkat via WhatsApp atau menjadwalkan kunjungan silaturahmi?\n\nTerima kasih.`
   const visitPitch = lead.enrichment?.pitch_script_visit || `Panduan Kunjungan Lapangan BFTM:\n1. Pembuka: Sampaikan apresiasi atas perkembangan ${lead.name}.\n2. Problem Statement: Diskusikan efisiensi transaksi, kemudahan rekonsiliasi, dan pengelolaan kas harian.\n3. Solusi Mandiri: Kenalkan ${lead.recommended_product} dengan benefit bebas biaya transaksi / integrasi QRIS & EDC Mandiri.\n4. Call to Action: Buka rekening operasional atau aktivasi Livin' Merchant di tempat.`
   const script = activeTab === 'wa' ? waPitch : visitPitch
-  const phone = lead.phone_number?.replace(/\D/g, '') || ''
-  const waUrl = phone ? `https://wa.me/${phone}?text=${encodeURIComponent(waPitch)}` : null
+  let cleanPhone = lead.phone_number?.replace(/\D/g, '') || ''
+  if (cleanPhone.startsWith('0')) {
+    cleanPhone = '62' + cleanPhone.slice(1)
+  }
+  const waUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waPitch)}` : null
 
   const copy = async () => {
     try { await navigator.clipboard.writeText(script); setCopyState('success') } catch { setCopyState('error') }
