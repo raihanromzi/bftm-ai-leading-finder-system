@@ -11,12 +11,8 @@ import {
   Copy,
   ExternalLink,
   MessageCircle,
-  Briefcase,
-  GraduationCap,
   Users,
   CreditCard,
-  Building2,
-  Calendar,
   Loader2,
 } from 'lucide-react'
 

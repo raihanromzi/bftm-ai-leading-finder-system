@@ -11,11 +11,6 @@ import {
   ShoppingBag,
   Factory,
   Building2,
-  CheckCircle2,
-  Clock,
-  Calendar,
-  XCircle,
-  HelpCircle,
   Loader2,
   X,
 } from 'lucide-react'
