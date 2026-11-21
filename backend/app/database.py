@@ -2,8 +2,12 @@ from sqlmodel import SQLModel, create_engine, Session
 from app.config import settings
 
 db_url = settings.database_url
+# Neon accepts postgres:// URLs. Pin SQLAlchemy to the bundled psycopg2 driver;
+# the generic postgresql:// dialect selects psycopg, which is not installed here.
 if db_url.startswith("postgres://"):
-    db_url = db_url.replace("postgres://", "postgresql://", 1)
+    db_url = db_url.replace("postgres://", "postgresql+psycopg2://", 1)
+elif db_url.startswith("postgresql://"):
+    db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
 
 _is_postgres = db_url.startswith("postgresql")
 
