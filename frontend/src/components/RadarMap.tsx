@@ -62,7 +62,7 @@ function markerIcon(category: string, fitScore: number, isActive: boolean) {
     className: 'custom-radar-pin',
     iconSize: [46, 46],
     iconAnchor: [23, 23],
-    html: `<div class="radar-pin ${isActive ? 'is-active' : ''}" style="--pin-color:${color}"><span class="radar-pin-score">${fitScore}%</span><span class="radar-pin-core"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${paths[type]}</svg></span></div>`,
+    html: `<div class="radar-pin ${isActive ? 'is-active' : ''}" style="--pin-color:${color}"><span class="radar-pin-score">${fitScore}%</span><span class="radar-pin-core"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths[type]}</svg></span></div>`,
   })
 }
 
