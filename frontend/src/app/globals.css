@@ -1,12 +1,28 @@
 @import "tailwindcss";
 
 :root {
-  --navy: #003366;
-  --gold: #FFB300;
-  --white: #FFFFFF;
-  --muted: #6B7280;
-  --bg: #F0F4F8;
+  /* Apple-inspired system palette & Mandiri accents */
+  --canvas: #F5F5F7;
+  --surface: #FFFFFF;
+  --surface-secondary: #FBFBFD;
+  --surface-tertiary: #F2F2F7;
+  --ink: #1D1D1F;
+  --ink-secondary: #6E6E73;
+  --ink-tertiary: #86868B;
+  --hairline: rgba(0, 0, 0, 0.08);
+  --hairline-strong: rgba(0, 0, 0, 0.14);
+  
+  /* Brand identities */
+  --mandiri-navy: #002D62;
+  --mandiri-blue: #0A3D78;
+  --mandiri-gold: #C58B00;
+  --apple-blue: #0071E3;
+  --apple-blue-hover: #0077ED;
+  
+  /* Emil Kowalski motion curves */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 * {
@@ -17,24 +33,150 @@
 
 html, body {
   height: 100%;
-  font-family: var(--font-inter), 'Inter', sans-serif;
-  background: var(--bg);
-  color: #111827;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "SF Pro", "Helvetica Neue", "Inter", system-ui, sans-serif;
+  background: var(--canvas);
+  color: var(--ink);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.btn {
-  transition: transform 160ms var(--ease-out), background-color 160ms ease, opacity 160ms ease;
+/* Subtle custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.16);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.28);
 }
 
-.btn:active {
+/* Tactile press micro-interactions */
+.apple-pressable {
+  transition: transform 160ms var(--ease-out), opacity 160ms var(--ease-out), background-color 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.apple-pressable:active {
   transform: scale(0.97);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .btn { transition: none; }
+@media (hover: hover) and (pointer: fine) {
+  .apple-pressable-hover:hover {
+    opacity: 0.94;
+  }
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .btn:hover { opacity: 0.9; }
+/* Reduced motion accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .apple-pressable,
+  .apple-drawer,
+  .apple-pin,
+  .btn,
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Range input Apple style */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]:focus-visible {
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  background: #E5E5EA;
+  height: 6px;
+  border-radius: 9999px;
+  transition: background-color 160ms var(--ease-out);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -5px;
+  background-color: #FFFFFF;
+  height: 16px;
+  width: 16px;
+  border-radius: 9999px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  transition: transform 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
+}
+
+input[type="range"]:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom Leaflet Map styling */
+.leaflet-container {
+  font-family: inherit;
+  width: 100%;
+  height: 100%;
+  background: #E8ECEF !important;
+}
+
+/* Apple style custom popup */
+.leaflet-popup-content-wrapper {
+  background: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+  border-radius: 14px !important;
+  padding: 0 !important;
+}
+
+.leaflet-popup-content {
+  margin: 10px 14px !important;
+  line-height: 1.4 !important;
+}
+
+.leaflet-popup-tip {
+  background: rgba(255, 255, 255, 0.92) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Custom Marker Pins */
+.custom-radar-pin {
+  background: transparent;
+  border: none;
+}
+
+.pin-bubble {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 2px solid #FFFFFF;
+  transition: transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out);
+  cursor: pointer;
+}
+
+.pin-bubble:hover {
+  transform: scale(1.18) translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25), 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.pin-bubble.active {
+  transform: scale(1.24) translateY(-3px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3), 0 0 0 3px rgba(0, 113, 227, 0.4);
 }
