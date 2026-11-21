@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from sqlmodel import SQLModel, Field
 
@@ -26,7 +26,7 @@ class Lead(SQLModel, table=True):
     pitch_angle: str = ""
     fit_score: int = 0
     lead_status: str = "New"
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class LeadEnrichment(SQLModel, table=True):
@@ -37,4 +37,4 @@ class LeadEnrichment(SQLModel, table=True):
     current_payment_methods: str = ""
     pitch_script_wa: str = ""
     pitch_script_visit: str = ""
-    enriched_at: datetime = Field(default_factory=datetime.utcnow)
+    enriched_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

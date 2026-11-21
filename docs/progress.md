@@ -1,9 +1,17 @@
 # MVP Build Progress & Ticket Queue
 
-## Current Status
-- **Active Ticket:** MVP Complete ✅
-- **Last Updated By:** Principal MVP Product Architect + Claude Code
-- **Blockers:** None (ready for Vercel setup)
+## Current Status — Session 2 (Deployment Fix)
+- **Frontend:** ✅ Ready (preview: `frontend-ljmrijqmo...vercel.app`)
+- **Backend:** ✅ Ready (alias: `backend-three-pi-11.vercel.app`)
+- **Last Updated By:** Claude Code
+- **Latest Commits:** 
+  - `bb9c067`: In-memory SQLite for Vercel Functions
+  - `346846f`: Trigger backend redeployment
+  - `95e008b`: Vercel FastAPI config
+- **Remaining Blockers:**
+  - Vercel Deployment Protection enabled on backend (auto-auth bypass generated)
+  - Frontend `NEXT_PUBLIC_API_URL` not set on Vercel env
+  - No E2E test of full flow (health → branches → discover → status → export)
 
 ## Completed Slices
 - [x] **PRD & Architecture Locked** — Defined problem, core user flow, FRs, non-goals, stack, and data schema in [PRD.md](file:///Users/raihanromzi/Documents/Development/bftm-ai-leading-finder-system/docs/PRD.md).
