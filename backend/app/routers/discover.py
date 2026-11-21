@@ -1,5 +1,6 @@
-"""Google Places discovery with deterministic mock fallback (PRD FR-2)."""
+"""Google Places discovery with deterministic local mock fallback (PRD FR-2)."""
 
+from math import asin, cos, radians, sin, sqrt
 from uuid import uuid4
 
 import httpx
@@ -22,15 +23,41 @@ class DiscoverRequest(BaseModel):
     categories: list[str] | None = None
 
 
-MOCK_LEADS = [
-    {"place_id": "mock-sdn-01", "name": "SDN 01 Jakarta Pusat", "category": "school", "address": "Jl. Thamrin No. 1, Jakarta Pusat", "latitude": -6.1930, "longitude": 106.8237, "phone_number": "+62 21 123 4567", "website": "https://sdn01jkt.sch.id"},
-    {"place_id": "mock-trisakti", "name": "Universitas Trisakti", "category": "university", "address": "Jl. Kyai Tapa 1, Jakarta Barat", "latitude": -6.1890, "longitude": 106.8100, "phone_number": "+62 21 555 2888", "website": "https://www.trisakti.ac.id"},
-    {"place_id": "mock-indomaret", "name": "Indomaret Thamrin Center", "category": "convenience_store", "address": "Thamrin Center, Jakarta Pusat", "latitude": -6.1920, "longitude": 106.8220, "phone_number": "+62 21 123 9999", "website": ""},
-    {"place_id": "mock-kopi", "name": "Kopi Jauh Malam", "category": "cafe", "address": "Jl. Sudirman No. 50, Jakarta Pusat", "latitude": -6.1950, "longitude": 106.8260, "phone_number": "+62 21 456 7890", "website": ""},
-    {"place_id": "mock-manufaktur", "name": "PT Manufaktur Indonesia", "category": "factory", "address": "Jl. Industri Raya, Jakarta Utara", "latitude": -6.1800, "longitude": 106.8350, "phone_number": "+62 21 777 8888", "website": ""},
+MOCK_LEAD_TEMPLATES = [
+    {"place_id": "mock-sdn-01", "name": "Sekolah Nusantara", "category": "school", "phone_number": "+62 21 123 4567", "website": ""},
+    {"place_id": "mock-campus", "name": "Kampus Cakrawala", "category": "university", "phone_number": "+62 21 555 2888", "website": ""},
+    {"place_id": "mock-convenience", "name": "Minimarket Setempat", "category": "convenience_store", "phone_number": "+62 21 123 9999", "website": ""},
+    {"place_id": "mock-cafe", "name": "Kopi Sudut Kota", "category": "cafe", "phone_number": "+62 21 456 7890", "website": ""},
+    {"place_id": "mock-factory", "name": "Sentra Usaha Lokal", "category": "factory", "phone_number": "+62 21 777 8888", "website": ""},
 ]
-
+MOCK_OFFSETS = [(0.2, 15), (0.35, 110), (0.5, 205), (0.65, 285), (0.8, 45)]
 GOOGLE_TYPES = ["school", "university", "cafe", "restaurant", "supermarket", "convenience_store"]
+
+
+def distance_km(start_lat: float, start_lng: float, end_lat: float, end_lng: float) -> float:
+    """Great-circle distance, used as a provider-independent radius guard."""
+    lat_delta = radians(end_lat - start_lat)
+    lng_delta = radians(end_lng - start_lng)
+    a = sin(lat_delta / 2) ** 2 + cos(radians(start_lat)) * cos(radians(end_lat)) * sin(lng_delta / 2) ** 2
+    return 2 * 6_371.0088 * asin(sqrt(a))
+
+
+def mock_leads(req: DiscoverRequest) -> list[dict]:
+    """Return deterministic placeholder POIs inside the requested scan circle."""
+    leads = []
+    for template, (ratio, bearing) in zip(MOCK_LEAD_TEMPLATES, MOCK_OFFSETS, strict=True):
+        distance = req.radius_km * ratio
+        lat_offset = distance * cos(radians(bearing)) / 111.32
+        lng_offset = distance * sin(radians(bearing)) / (111.32 * cos(radians(req.latitude)))
+        leads.append(
+            {
+                **template,
+                "address": f"Area sekitar titik pemindaian ({distance:.1f} km)",
+                "latitude": req.latitude + lat_offset,
+                "longitude": req.longitude + lng_offset,
+            }
+        )
+    return leads
 
 
 def category_from_types(types: list[str]) -> str:
@@ -89,8 +116,6 @@ async def google_places(req: DiscoverRequest) -> list[dict]:
 @router.post("/discover")
 async def discover(req: DiscoverRequest, session: Session = Depends(get_session)):
     """Discover entities within allowed regions: Jakarta, Jabodetabek, Cikarang, Karawang."""
-    # Restrict to Jabodetabek + Karawang + Cikarang (bounding box)
-    # Latitude: -6.5 to -5.9, Longitude: 106.5 to 107.5
     if not (-6.5 <= req.latitude <= -5.9 and 106.5 <= req.longitude <= 107.5):
         raise HTTPException(
             status_code=400,
@@ -103,12 +128,19 @@ async def discover(req: DiscoverRequest, session: Session = Depends(get_session)
             leads_data = await google_places(req)
             source = "google_places"
         except httpx.HTTPError:
-            leads_data = MOCK_LEADS
+            leads_data = mock_leads(req)
     else:
-        leads_data = MOCK_LEADS
+        leads_data = mock_leads(req)
 
-    if req.categories and source == "mock":
+    if req.categories:
         leads_data = [lead for lead in leads_data if lead["category"] in req.categories]
+
+    # Google is asked for a circle; this guard keeps bad provider data off the map.
+    leads_data = [
+        lead
+        for lead in leads_data
+        if distance_km(req.latitude, req.longitude, lead["latitude"], lead["longitude"]) <= req.radius_km
+    ]
 
     results = []
     for data in leads_data:
