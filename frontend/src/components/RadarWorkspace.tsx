@@ -267,7 +267,17 @@ export default function RadarWorkspace() {
             <div className="radar-radius-row">
               <label htmlFor="radar-radius">Jangkauan</label><output>{radius} km</output>
             </div>
-            <input id="radar-radius" name="radius" type="range" min="1" max="25" step="1" value={radius} onChange={(event) => setRadius(Number(event.target.value))} />
+            <input
+              id="radar-radius"
+              name="radius"
+              type="range"
+              min="1"
+              max="25"
+              step="1"
+              value={radius}
+              style={{ '--slider-fill': `${((radius - 1) / 24) * 100}%` } as React.CSSProperties}
+              onChange={(event) => setRadius(Number(event.target.value))}
+            />
             <Button onClick={() => discoverAt()} disabled={loading} className="radar-primary-button w-full">
               {loading ? <Loader2 className="animate-spin" /> : <Radio />}{loading ? 'Memindai…' : 'Pindai wilayah'}
             </Button>
