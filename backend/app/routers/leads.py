@@ -85,10 +85,18 @@ async def enrich_leads(req: EnrichRequest, session: Session = Depends(get_sessio
 
 @router.patch("/leads/{lead_id}/status")
 async def update_lead_status(lead_id: int, req: StatusUpdateRequest, session: Session = Depends(get_session)):
-    """Update a lead's status."""
-    lead = session.query(Lead).filter(Lead.id == lead_id).first()
+    """Update a lead's status with validation."""
+    allowed_statuses = {"New", "Contacted", "Visit Scheduled", "Won", "Dropped"}
+    if req.status not in allowed_statuses:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Status harus salah satu dari: {', '.join(allowed_statuses)}"
+        )
+
+    lead = session.get(Lead, lead_id)
     if not lead:
-        return {"error": "Lead not found"}, 404
+        raise HTTPException(status_code=404, detail="Lead tidak ditemukan")
+
     lead.lead_status = req.status
     session.add(lead)
     session.commit()

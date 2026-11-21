@@ -3,7 +3,7 @@
 from uuid import uuid4
 
 import httpx
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 
@@ -88,7 +88,15 @@ async def google_places(req: DiscoverRequest) -> list[dict]:
 
 @router.post("/discover")
 async def discover(req: DiscoverRequest, session: Session = Depends(get_session)):
-    """Discover entities, persist them, and apply Mandiri's deterministic product rules."""
+    """Discover entities within allowed regions: Jakarta, Jabodetabek, Cikarang, Karawang."""
+    # Restrict to Jabodetabek + Karawang + Cikarang (bounding box)
+    # Latitude: -6.5 to -5.9, Longitude: 106.5 to 107.5
+    if not (-6.5 <= req.latitude <= -5.9 and 106.5 <= req.longitude <= 107.5):
+        raise HTTPException(
+            status_code=400,
+            detail="Pemindaian hanya tersedia di Jakarta, Jabodetabek, Cikarang, dan Karawang.",
+        )
+
     source = "mock"
     if settings.google_places_api_key:
         try:
