@@ -223,16 +223,6 @@ export default function RadarWorkspace() {
   return (
     <div className="map-shell">
       <a href="#radar-map" className="skip-link">Lewati ke peta</a>
-      <aside className="map-rail" aria-label="Navigasi radar">
-        <div className="map-brand"><Compass size={20} aria-hidden="true" /></div>
-        <nav className="map-rail-nav" aria-label="Tampilan workspace">
-          <button type="button" className="map-rail-button is-active" aria-label="Prospek di peta"><MapPin size={18} aria-hidden="true" /></button>
-          <button type="button" className="map-rail-button" aria-label="Prospek prioritas" onClick={() => setActiveFilter('all')}><Heart size={18} aria-hidden="true" /></button>
-          <button type="button" className="map-rail-button" aria-label="Filter dan jangkauan" onClick={() => document.getElementById('radar-radius')?.focus()}><SlidersHorizontal size={18} aria-hidden="true" /></button>
-        </nav>
-        <div className="map-rail-status" title={health === 'ok' ? 'Backend terhubung' : 'Backend belum terhubung'}><span className={health === 'ok' ? 'is-online' : ''} /></div>
-      </aside>
-
       <section className="map-list-panel" aria-label="Daftar prospek">
         <header className="map-list-header">
           <div>

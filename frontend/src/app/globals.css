@@ -64,17 +64,7 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
 .skip-link { position: fixed; z-index: 1500; top: -4rem; left: 1rem; padding: .6rem .8rem; border-radius: .45rem; background: #18181b; color: #fff; font-size: .82rem; font-weight: 700; transition: top 160ms var(--ease-out); }
 .skip-link:focus { top: 1rem; }
 
-.map-shell { min-height: 100dvh; display: grid; grid-template-columns: 64px minmax(360px, 430px) minmax(0, 1fr); overflow: hidden; background: #f7f8fa; }
-.map-rail { z-index: 600; display: flex; min-height: 100dvh; flex-direction: column; align-items: center; border-right: 1px solid #e4e4e7; background: #fff; }
-.map-brand { display: grid; width: 34px; height: 34px; place-items: center; margin-top: 15px; border-radius: 10px; background: #18181b; color: white; }
-.map-rail-nav { display: grid; gap: 8px; margin-top: 34px; }
-.map-rail-button { display: grid; width: 36px; height: 36px; place-items: center; border: 0; border-radius: 9px; color: #71717a; background: transparent; cursor: pointer; transition: transform 140ms var(--ease-out), color 140ms ease, background-color 140ms ease; }
-.map-rail-button:hover { color: #18181b; background: #f4f4f5; }
-.map-rail-button.is-active { color: white; background: #18181b; }
-.map-rail-button:active { transform: scale(.97); }
-.map-rail-status { width: 9px; height: 9px; margin-top: auto; margin-bottom: 18px; border-radius: 99px; background: #f59e0b; }
-.map-rail-status .is-online { display: block; width: 100%; height: 100%; border-radius: inherit; background: #22c55e; }
-
+.map-shell { min-height: 100dvh; display: grid; grid-template-columns: minmax(360px, 430px) minmax(0, 1fr); overflow: hidden; background: #f7f8fa; }
 .map-list-panel { z-index: 500; min-height: 100dvh; display: flex; flex-direction: column; overflow: hidden; border-right: 1px solid #e4e4e7; background: rgba(255,255,255,.97); }
 .map-list-header { padding: 22px 20px 16px; display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; border-bottom: 1px solid #ececf0; }
 .map-list-header h1, .map-list-title h2 { margin: 0; color: #18181b; font-size: 1rem; font-weight: 750; letter-spacing: -.02em; }
@@ -141,6 +131,6 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
 .apple-pressable:active { transform: scale(.97); }
 
 @media (hover: hover) and (pointer: fine) { .pin-bubble:hover { transform: translateY(-2px) scale(1.08); box-shadow: 0 7px 14px rgb(0 0 0 / .28); } }
-@media (max-width: 900px) { .map-shell { grid-template-columns: 56px minmax(320px, 380px) minmax(0, 1fr); } }
-@media (max-width: 720px) { .map-shell { min-height: 100dvh; grid-template-columns: 1fr; grid-template-rows: auto minmax(300px, 44dvh); overflow-y: auto; } .map-rail { position: sticky; top: 0; min-height: 55px; flex-direction: row; justify-content: space-between; padding: 0 11px; border-right: 0; border-bottom: 1px solid #e4e4e7; } .map-brand { margin: 0; } .map-rail-nav { display: flex; gap: 5px; margin: 0; } .map-rail-status { margin: 0; } .map-list-panel { min-height: 0; max-height: 620px; border-right: 0; border-bottom: 1px solid #e4e4e7; } .map-list-header { padding: 15px 16px 12px; } .map-branch-control { padding-inline: 16px; } .map-search-wrap { margin-inline: 16px; } .map-list-title { padding-inline: 16px; } .map-canvas { min-height: 44dvh; } .map-canvas-location { bottom: 12px; right: 12px; } }
+@media (max-width: 900px) { .map-shell { grid-template-columns: minmax(320px, 380px) minmax(0, 1fr); } }
+@media (max-width: 720px) { .map-shell { min-height: 100dvh; grid-template-columns: 1fr; grid-template-rows: auto minmax(300px, 44dvh); overflow-y: auto; } .map-list-panel { min-height: 0; max-height: 620px; border-right: 0; border-bottom: 1px solid #e4e4e7; } .map-list-header { padding: 15px 16px 12px; } .map-branch-control { padding-inline: 16px; } .map-search-wrap { margin-inline: 16px; } .map-list-title { padding-inline: 16px; } .map-canvas { min-height: 44dvh; } .map-canvas-location { bottom: 12px; right: 12px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
