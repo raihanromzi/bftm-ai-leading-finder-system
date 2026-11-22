@@ -10,7 +10,7 @@ RULES: list[tuple[tuple[str, ...], str, str, int]] = [
     (("university",), "Livin' Mandiri Campus & GMM Acquisition", "Rektorat / BEM", 80),
     (("convenience_store",), "GMM Campus Livin' Acquisition", "Store Manager", 75),
     (("cafe", "restaurant"), "Livin' Merchant & EDC Mandiri", "Pemilik Usaha", 70),
-    (("factory", "industrial"), "Payroll Mandiri & Corporate Cash Mgmt (KOPRA)", "HR / Finance Manager", 80),
+    (("factory", "industrial", "corporate_office"), "Payroll Mandiri & Corporate Cash Mgmt (KOPRA)", "HR / Finance Manager", 80),
     (("supermarket", "retail"), "Livin' Merchant & EDC Mandiri", "Pemilik Usaha", 72),
 ]
 

@@ -1,5 +1,6 @@
 """Google Places discovery with deterministic local mock fallback (PRD FR-2)."""
 
+import asyncio
 from math import asin, cos, radians, sin, sqrt
 from uuid import uuid4
 
@@ -78,23 +79,35 @@ def category_from_types(types: list[str]) -> str:
     """Collapse Places types to the product engine's MVP categories."""
     joined = " ".join(types).lower()
     for category, aliases in {
-        "school": ("school",),
-        "university": ("university",),
-        "convenience_store": ("convenience_store",),
-        "cafe": ("cafe", "restaurant"),
-        "supermarket": ("supermarket", "store"),
+        "school": ("school", "primary_school", "secondary_school"),
+        "university": ("university", "college"),
+        "factory": ("factory", "manufacturer", "industrial", "corporate_office"),
+        "convenience_store": ("convenience_store", "grocery_store"),
+        "cafe": ("cafe", "restaurant", "bakery"),
+        "supermarket": ("supermarket", "shopping_mall", "store", "department_store"),
     }.items():
         if any(alias in joined for alias in aliases):
             return category
     return "community_hub"
 
 
-async def google_places(req: DiscoverRequest) -> list[dict]:
-    """Call Places API (New) Nearby Search. Called only when a key is configured."""
+SEARCH_BUCKETS = [
+    ["school", "primary_school", "secondary_school", "university"],
+    ["corporate_office", "manufacturer"],
+    ["supermarket", "shopping_mall", "cafe", "restaurant", "store"],
+]
+
+
+async def _fetch_places_bucket(
+    client: httpx.AsyncClient,
+    req: DiscoverRequest,
+    types: list[str],
+    max_count: int = 8,
+) -> list[dict]:
     body = {
-        "includedTypes": req.categories or GOOGLE_TYPES,
-        "maxResultCount": 20,
-        "rankPreference": "DISTANCE",
+        "includedTypes": types,
+        "maxResultCount": max_count,
+        "rankPreference": "POPULARITY",
         "languageCode": "id",
         "regionCode": "ID",
         "locationRestriction": {
@@ -109,9 +122,37 @@ async def google_places(req: DiscoverRequest) -> list[dict]:
         "X-Goog-Api-Key": settings.google_places_api_key,
         "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.location,places.types,places.nationalPhoneNumber,places.websiteUri",
     }
-    async with httpx.AsyncClient(timeout=10) as client:
-        response = await client.post("https://places.googleapis.com/v1/places:searchNearby", json=body, headers=headers)
-        response.raise_for_status()
+    try:
+        response = await client.post(
+            "https://places.googleapis.com/v1/places:searchNearby",
+            json=body,
+            headers=headers,
+        )
+        if response.status_code == 200:
+            return response.json().get("places", [])
+    except Exception:
+        pass
+    return []
+
+
+async def google_places(req: DiscoverRequest) -> list[dict]:
+    """Call Places API (New) with balanced category buckets across the full radius."""
+    raw_places = []
+    async with httpx.AsyncClient(timeout=12) as client:
+        if req.categories:
+            raw_places = await _fetch_places_bucket(client, req, req.categories, max_count=20)
+        else:
+            bucket_results = await asyncio.gather(
+                *[_fetch_places_bucket(client, req, bucket, max_count=8) for bucket in SEARCH_BUCKETS]
+            )
+            seen_ids = set()
+            for places in bucket_results:
+                for p in places:
+                    pid = p.get("id")
+                    if pid and pid not in seen_ids:
+                        seen_ids.add(pid)
+                        raw_places.append(p)
+
     return [
         {
             "place_id": place.get("id") or f"google-{uuid4()}",
@@ -123,7 +164,7 @@ async def google_places(req: DiscoverRequest) -> list[dict]:
             "phone_number": place.get("nationalPhoneNumber", ""),
             "website": place.get("websiteUri", ""),
         }
-        for place in response.json().get("places", [])
+        for place in raw_places
     ]
 
 
