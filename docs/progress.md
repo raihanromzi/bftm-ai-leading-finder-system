@@ -20,6 +20,23 @@ All endpoints and client features functional and verified:
 - UI/UX Craft: ✅ Single "Lihat Detail" drawer entry point, per-lead loading state, zero build warnings
 
 ## Completed Slices
+- [x] **Enhancement: Sole Branch Base (KC Jakarta Wisma Danantara) & Tactile Identity Card**
+  - Consolidated branch presets to a single dedicated home base: **Bank Mandiri KC Jakarta Wisma Danantara** (`JKT-DANANTARA`, lat `-6.2249`, lng `106.8145`) inside Wisma Danantara Indonesia (formerly Plaza Mandiri / Plaza Exim), Jl. Jend. Gatot Subroto Kav. 36–38, Jakarta Selatan.
+  - Replaced the single-option `<select>` dropdown with an intentional, tactile **Branch Identity Card** featuring branch metadata, operational context, and an automated "Reset ke Cabang" pill button when the officer navigates/clicks outside the home base.
+  - Updated auto-seed routine in `backend/app/seed_branches.py` and `backend/app/routers/branches.py` to auto-clean legacy branch presets on cold start.
+  - Updated regression test suite `tests/test_api.py` asserting sole branch preset and updated Jabodetabek scan coordinates to Danantara.
+  - Fully synchronized docs: `README.md`, `docs/PRD.md`, `docs/MVP-PLAN.md`, and `docs/progress.md`.
+  - *Modified Files:*
+    - `backend/app/seed_branches.py`
+    - `backend/app/routers/branches.py`
+    - `backend/tests/test_api.py`
+    - `frontend/src/app/globals.css`
+    - `frontend/src/components/RadarWorkspace.tsx`
+    - `README.md`
+    - `docs/PRD.md`
+    - `docs/MVP-PLAN.md`
+    - `docs/progress.md`
+
 - [x] **Enhancement: Focused Hyperlocal Radius (1–5 km) & Deep Campus/Merchant Ecosystem Mapping**
   - Tightened radius focus to 1–5 km (default 3 km) with exact slider track sync `((radius - 1) / 4) * 100%`.
   - Upgraded Google Places discovery to 4 deep parallel buckets (`max_count=12` each) with `POPULARITY` ranking:

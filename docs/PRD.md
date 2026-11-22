@@ -14,8 +14,9 @@
 
 ## 3. MVP Functional Requirements (In-Scope)
 - **[FR-1] Interactive Branch Map & Radius Control:** 
-  - Interactive Leaflet.js map centered on Indonesia (with default presets like KC Jakarta Thamrin, KCP Bandung Dago, KC Surabaya Basuki Rahmat, etc.).
-  - Draggable pin / coordinate click with dynamic circular radius visualizer (1 km to 5 km slider, default 3 km).
+  - Interactive Leaflet.js map anchored to home base **Bank Mandiri KC Jakarta Wisma Danantara** (Wisma Danantara Indonesia / ex Plaza Mandiri, Jl. Jend. Gatot Subroto Kav. 36–38, Jakarta Selatan).
+  - Tactile Branch Identity Card with dynamic 1-click "Reset ke Cabang" button when exploring outside home base coordinates.
+  - Interactive coordinate click with dynamic circular radius visualizer (1 km to 5 km slider, default 3 km).
 - **[FR-2] Hyperlocal Deep Ecosystem Discovery Engine (Google Places API):**
   - Backend integration with Google Places API (Nearby Search with `POPULARITY` ranking and 4 parallel category buckets) targeting high-density ecosystems:
     - *Campuses & Schools:* `university`, `college`, `school`, `primary_school`, `secondary_school`

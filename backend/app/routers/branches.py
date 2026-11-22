@@ -10,7 +10,7 @@ router = APIRouter()
 @router.get("/branches")
 async def list_branches(session: Session = Depends(get_session)):
     branches = session.exec(select(BranchPreset)).all()
-    if not branches:
+    if not branches or len(branches) > 1 or branches[0].code != "JKT-DANANTARA":
         seed_branches(session)
         branches = session.exec(select(BranchPreset)).all()
     return {"branches": [b.model_dump() for b in branches]}

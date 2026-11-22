@@ -14,6 +14,7 @@ import {
   LocateFixed,
   MapPin,
   Radio,
+  RotateCcw,
   Search,
   Store,
   Trophy,
@@ -82,7 +83,7 @@ export default function RadarWorkspace() {
   const [leads, setLeads] = useState<LeadItem[]>([])
   const [loading, setLoading] = useState(false)
   const [enrichingIds, setEnrichingIds] = useState<Set<number>>(new Set())
-  const [mapCenter, setMapCenter] = useState<[number, number]>([-6.193, 106.8237])
+  const [mapCenter, setMapCenter] = useState<[number, number]>([-6.2249, 106.8145])
   const [selectedLead, setSelectedLead] = useState<LeadItem | null>(null)
   const [hoveredLead, setHoveredLead] = useState<LeadItem | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
@@ -163,6 +164,20 @@ export default function RadarWorkspace() {
     setIsDrawerOpen(false)
     setLeads([])
     discoverAt(coordinates)
+  }
+
+  const isCustomLocation = useMemo(() => {
+    if (!selectedBranch) return false
+    return (
+      Math.abs(mapCenter[0] - selectedBranch.latitude) > 0.0005 ||
+      Math.abs(mapCenter[1] - selectedBranch.longitude) > 0.0005
+    )
+  }, [mapCenter, selectedBranch])
+
+  const resetToBranch = () => {
+    if (selectedBranch) {
+      handleLocationChange([selectedBranch.latitude, selectedBranch.longitude])
+    }
   }
 
   const handleStatusChange = async (leadId: number, status: string) => {
@@ -254,16 +269,29 @@ export default function RadarWorkspace() {
 
         <div className="radar-sidebar-scroll">
           <section className="radar-control-section">
-            <label htmlFor="branch-select">Kantor cabang</label>
-            <select id="branch-select" name="branch" autoComplete="off" value={selectedBranch?.id || ''} onChange={(event) => {
-              const branch = branches.find((item) => item.id === Number(event.target.value))
-              if (!branch) return
-              setSelectedBranch(branch)
-              setMapCenter([branch.latitude, branch.longitude])
-              setHoveredLead(null)
-            }}>
-              {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name} ({branch.city})</option>)}
-            </select>
+            <div className="radar-branch-card">
+              <div className="radar-branch-icon" aria-hidden="true">
+                <Building2 size={18} />
+              </div>
+              <div className="radar-branch-info min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="radar-branch-tag">Pusat Pangkalan BFTM</span>
+                  {isCustomLocation && (
+                    <button
+                      type="button"
+                      className="radar-reset-btn"
+                      onClick={resetToBranch}
+                      title="Kembali ke koordinat Wisma Danantara"
+                    >
+                      <RotateCcw size={12} />
+                      <span>Reset</span>
+                    </button>
+                  )}
+                </div>
+                <h2 className="radar-branch-name">{selectedBranch?.name || 'Bank Mandiri KC Wisma Danantara'}</h2>
+                <p className="radar-branch-address">Wisma Danantara (ex Plaza Mandiri) · Kav. 36–38, Jaksel</p>
+              </div>
+            </div>
             <div className="radar-radius-row">
               <label htmlFor="radar-radius">Jangkauan</label><output>{radius} km</output>
             </div>

@@ -29,15 +29,16 @@ class TestBFTMRadarAPI(unittest.IsolatedAsyncioTestCase):
         r = await self.client.get("/api/branches")
         self.assertEqual(r.status_code, 200)
         branches = r.json().get("branches", [])
-        self.assertGreater(len(branches), 0, "Branches should be seeded")
+        self.assertEqual(len(branches), 1, "Sole branch preset should be seeded")
         first = branches[0]
-        self.assertIn("name", first)
-        self.assertIn("latitude", first)
-        self.assertIn("longitude", first)
+        self.assertEqual(first["name"], "Bank Mandiri KC Jakarta Wisma Danantara")
+        self.assertEqual(first["code"], "JKT-DANANTARA")
+        self.assertEqual(first["latitude"], -6.2249)
+        self.assertEqual(first["longitude"], 106.8145)
 
     async def test_03_hyperlocal_discovery_jabodetabek(self):
-        # Scan centered at KC Jakarta Thamrin (tight hyperlocal radius: 3 km)
-        payload = {"latitude": -6.1930, "longitude": 106.8237, "radius_km": 3}
+        # Scan centered at KC Jakarta Wisma Danantara (tight hyperlocal radius: 3 km)
+        payload = {"latitude": -6.2249, "longitude": 106.8145, "radius_km": 3}
         r = await self.client.post("/api/discover", json=payload)
         self.assertEqual(r.status_code, 200)
         data = r.json()
@@ -71,7 +72,7 @@ class TestBFTMRadarAPI(unittest.IsolatedAsyncioTestCase):
 
     async def test_06_lead_status_lifecycle(self):
         # Discover first to ensure leads exist
-        payload = {"latitude": -6.1930, "longitude": 106.8237, "radius_km": 5}
+        payload = {"latitude": -6.2249, "longitude": 106.8145, "radius_km": 5}
         r = await self.client.post("/api/discover", json=payload)
         leads = r.json().get("leads", [])
         lead_id = leads[0]["id"]
@@ -87,7 +88,7 @@ class TestBFTMRadarAPI(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(inv_res.status_code, 400)
 
     async def test_07_enrichment_flow(self):
-        payload = {"latitude": -6.1930, "longitude": 106.8237, "radius_km": 5}
+        payload = {"latitude": -6.2249, "longitude": 106.8145, "radius_km": 5}
         r = await self.client.post("/api/discover", json=payload)
         leads = r.json().get("leads", [])
         lead_id = leads[0]["id"]
