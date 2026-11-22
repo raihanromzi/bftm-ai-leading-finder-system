@@ -20,6 +20,18 @@ All endpoints and client features functional and verified:
 - UI/UX Craft: ✅ Single "Lihat Detail" drawer entry point, per-lead loading state, zero build warnings
 
 ## Completed Slices
+- [x] **Bug Fix: Revert Default Map Styling to Vibrant Full-Color OpenStreetMap**
+  - Reverted default map canvas from desaturated minimalist filter back to vibrant, natural full-color OpenStreetMap view (`standar` / `Berwarna`).
+  - Restored clear visual differentiation for parks (green), water bodies (blue), arterial roads (orange/yellow), and residential districts with zero API key requirement.
+  - Retained floating 4-theme switcher pill (`Berwarna`, `Modern`, `Minimalis`, `Gelap`) so officers can switch views on-demand without reloading tile assets.
+  - Updated `localStorage` migration so existing sessions automatically default to `standar` (Berwarna).
+  - *Modified Files:*
+    - `frontend/src/components/RadarMap.tsx`
+    - `README.md`
+    - `docs/PRD.md`
+    - `docs/MVP-PLAN.md`
+    - `docs/progress.md`
+
 - [x] **Enhancement: Building Tenant Unbundling & Office Directory Intelligence**
   - Resolved the limitation where scanning commercial areas returned generic office towers (e.g. "RDTX Tower") rather than the actual companies operating inside.
   - Implemented Building Tenant Unbundling across the full stack:

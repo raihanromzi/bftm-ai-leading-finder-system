@@ -12,7 +12,7 @@ A specialized web workspace for Bank Mandiri Branch Funding Transaction Managers
 
 ## Key Features
 
-- 📍 **Hyperlocal Territory Radar:** Interactive map (Leaflet) anchored to Bank Mandiri KC Jakarta Wisma Danantara (Wisma Danantara Indonesia / ex Plaza Mandiri, Jl. Jend. Gatot Subroto Kav. 36–38) with tactile Branch Identity Card, instant reset button, focused radius slider (1–5 km, default 3 km), and a zero-key minimalist map canvas with 4 instant switchable visual styles (`Minimalis`, `Modern`, `Gelap`, `Standar`).
+- 📍 **Hyperlocal Territory Radar:** Interactive map (Leaflet) anchored to Bank Mandiri KC Jakarta Wisma Danantara (Wisma Danantara Indonesia / ex Plaza Mandiri, Jl. Jend. Gatot Subroto Kav. 36–38) with tactile Branch Identity Card, instant reset button, focused radius slider (1–5 km, default 3 km), and a vibrant full-color default map canvas with 4 instant switchable visual styles (`Berwarna`, `Modern`, `Minimalis`, `Gelap`).
 - 🔍 **Deep Commercial Ecosystem Discovery:** Google Places API (New) integration with 4 parallel search buckets (Campuses & Schools, Cafes & Coffee Hubs, Retail Chains like Indomaret/Alfamart/FamilyMart, and Corporate/Workplaces) retrieving dense, actionable leads across the target radius.
 - 🎯 **Rule-Gated Bank Product Engine:** Deterministic mapping to Mandiri products:
   - *Schools / Universities* $\rightarrow$ Tabungan SimPel, Payroll, & Livin' Campus Acquisition

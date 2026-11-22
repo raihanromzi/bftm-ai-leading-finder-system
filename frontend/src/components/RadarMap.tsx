@@ -9,13 +9,13 @@ import { LeadItem } from './LeadDetailDrawer'
 
 type Coordinates = [number, number]
 
-export type MapThemeKey = 'minimalis' | 'modern' | 'gelap' | 'standar'
+export type MapThemeKey = 'standar' | 'modern' | 'minimalis' | 'gelap'
 
 export const MAP_THEMES: Record<MapThemeKey, { id: MapThemeKey; name: string }> = {
-  minimalis: { id: 'minimalis', name: 'Minimalis' },
+  standar: { id: 'standar', name: 'Berwarna' },
   modern: { id: 'modern', name: 'Modern' },
+  minimalis: { id: 'minimalis', name: 'Minimalis' },
   gelap: { id: 'gelap', name: 'Gelap' },
-  standar: { id: 'standar', name: 'Standar' },
 }
 
 interface RadarMapProps {
@@ -84,16 +84,18 @@ const centerIcon = L.divIcon({
 })
 
 export default function RadarMap({ center, radiusKm, leads, selectedLeadId, onLocationChange, onHoverLead, onSelectLead }: RadarMapProps) {
-  const [themeKey, setThemeKey] = useState<MapThemeKey>('minimalis')
+  const [themeKey, setThemeKey] = useState<MapThemeKey>('standar')
 
   useEffect(() => {
     try {
       const saved = localStorage.getItem('bftm-radar-theme')
-      if (saved === 'positron') setThemeKey('minimalis')
-      else if (saved === 'voyager') setThemeKey('modern')
-      else if (saved === 'dark') setThemeKey('gelap')
-      else if (saved === 'standard') setThemeKey('standar')
-      else if (saved && (saved in MAP_THEMES)) setThemeKey(saved as MapThemeKey)
+      if (saved === 'modern' || saved === 'gelap' || saved === 'minimalis') {
+        setThemeKey(saved as MapThemeKey)
+      } else {
+        // Default to vibrant full-color OSM map
+        setThemeKey('standar')
+        localStorage.setItem('bftm-radar-theme', 'standar')
+      }
     } catch {}
   }, [])
 
