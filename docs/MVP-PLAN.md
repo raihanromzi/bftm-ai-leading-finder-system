@@ -11,7 +11,7 @@ Ship a fully working MVP where BFTMs can drop a branch pin, discover 30+ verifie
 - **Ticket 1 ✅ Scaffold & Tracer Bullet:** Next.js 16 + Leaflet map (Indonesia centered), FastAPI backend, health check & branch presets.
 - **Ticket 2 ✅ Hyperlocal Discovery Engine:** Google Places API (New) integration with Jabodetabek regional buffer geofencing.
 - **Ticket 3 ✅ Mandiri Product Matching:** Deterministic 6-product rule engine with fit scores & pitch angles.
-- **Ticket 4 ✅ ScrapeGraphAI Two-Tier Enrichment:** Real web scraping via `SearchGraph` & `SmartScraperGraph` with Gemini 2.0 Flash backbone.
+- **Ticket 4 ✅ ScrapeGraphAI Two-Tier Enrichment & Tenant Unbundling:** Real web scraping via `SearchGraph` & `SmartScraperGraph` with Gemini 2.0 Flash backbone, plus deep office building tenant unbundling (RDTX Tower, etc.).
 - **Ticket 5 ✅ Lead Pipeline & CSV Export:** State machine (`New` $\rightarrow$ `Contacted` $\rightarrow$ `Visit Scheduled` $\rightarrow$ `Won`/`Dropped`) + 1-click CSV download.
 - **Post-MVP Hardening ✅:** Neon PostgreSQL integration (`DATABASE_URL`), tactile drawer UI, granular loading states, automated regression test suite (`tests/test_api.py`), and unified agent skills (`/develop`, `/fix`, `/enhance`).
 

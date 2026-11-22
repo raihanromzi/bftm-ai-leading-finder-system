@@ -25,6 +25,7 @@ class DiscoverRequest(BaseModel):
 
 
 MOCK_LEAD_TEMPLATES = [
+    {"place_id": "mock-tower-rdtx", "name": "RDTX Tower (Mega Kuningan)", "category": "factory", "phone_number": "+62 21 5790 3300", "website": "https://rdtxtower.co.id"},
     {"place_id": "mock-campus-01", "name": "Universitas Cakrawala", "category": "university", "phone_number": "+62 21 555 2888", "website": "https://cakrawala.ac.id"},
     {"place_id": "mock-cafe-01", "name": "Kopi Kancana Campus Hub", "category": "cafe", "phone_number": "+62 812 4567 8901", "website": ""},
     {"place_id": "mock-mart-01", "name": "Indomaret Point Kampus", "category": "convenience_store", "phone_number": "+62 21 123 9999", "website": ""},
@@ -32,7 +33,6 @@ MOCK_LEAD_TEMPLATES = [
     {"place_id": "mock-food-01", "name": "Kantin & Resto Selera Mahasiswa", "category": "cafe", "phone_number": "+62 813 9988 7766", "website": ""},
     {"place_id": "mock-sdn-01", "name": "SD & SMP Nusantara Unggul", "category": "school", "phone_number": "+62 21 123 4567", "website": ""},
     {"place_id": "mock-cafe-02", "name": "FamilyMart Express Transit", "category": "convenience_store", "phone_number": "+62 21 456 1122", "website": ""},
-    {"place_id": "mock-corp-01", "name": "Sentra Niaga & Kantor Operasional", "category": "factory", "phone_number": "+62 21 777 8888", "website": ""},
     {"place_id": "mock-super-01", "name": "Superindo Pasar Segar", "category": "supermarket", "phone_number": "+62 21 888 2211", "website": ""},
     {"place_id": "mock-mfg-01", "name": "Workshop & Logistik Terpadu", "category": "factory", "phone_number": "+62 21 333 4455", "website": ""},
 ]
@@ -89,7 +89,7 @@ def category_from_types(types: list[str]) -> str:
     for category, aliases in {
         "school": ("school", "primary_school", "secondary_school"),
         "university": ("university", "college"),
-        "factory": ("factory", "manufacturer", "industrial", "corporate_office"),
+        "factory": ("factory", "manufacturer", "industrial", "corporate_office", "consultant", "financial_institution", "coworking_space"),
         "convenience_store": ("convenience_store", "grocery_store", "market"),
         "cafe": ("cafe", "coffee", "restaurant", "bakery", "fast_food"),
         "supermarket": ("supermarket", "shopping_mall", "store", "department_store"),
@@ -107,7 +107,7 @@ SEARCH_BUCKETS = [
     # 3. Daily Retail Chains & Outlets (Indomaret, Alfamart, FamilyMart, Superindo)
     ["convenience_store", "supermarket", "grocery_store", "shopping_mall"],
     # 4. Corporate & Industrial Workplaces (Payroll Mandiri & KOPRA)
-    ["corporate_office", "manufacturer"],
+    ["corporate_office", "consultant", "financial_institution", "manufacturer", "coworking_space"],
 ]
 
 

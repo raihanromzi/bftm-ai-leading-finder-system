@@ -110,6 +110,33 @@ class TestBFTMRadarAPI(unittest.IsolatedAsyncioTestCase):
         lines = content.strip().split("\n")
         self.assertGreaterEqual(len(lines), 2)  # Header + at least 1 lead row
 
+    async def test_09_office_building_tenant_unbundling(self):
+        # Discover leads
+        payload = {"latitude": -6.2249, "longitude": 106.8145, "radius_km": 3}
+        r = await self.client.post("/api/discover", json=payload)
+        leads = r.json().get("leads", [])
+        tower_lead = next((lead for lead in leads if "tower" in lead["name"].lower() or "gedung" in lead["name"].lower()), leads[0])
+        self.assertIsNotNone(tower_lead)
+
+        # Enrich the tower lead
+        enrich_res = await self.client.post("/api/leads/enrich", json={"lead_ids": [tower_lead["id"]]})
+        self.assertEqual(enrich_res.status_code, 200)
+        enriched = enrich_res.json()["results"][0]
+        signals = enriched["signals"]
+        self.assertIn("tenants", signals)
+        self.assertIsInstance(signals["tenants"], list)
+        self.assertGreater(len(signals["tenants"]), 0)
+        first_tenant = signals["tenants"][0]
+        self.assertIn("name", first_tenant)
+        self.assertIn("product", first_tenant)
+
+        # Verify GET /api/leads joins tenant data
+        leads_res = await self.client.get("/api/leads")
+        all_leads = leads_res.json()["leads"]
+        matched_lead = next(l for l in all_leads if l["id"] == tower_lead["id"])
+        self.assertIn("tenants", matched_lead["enrichment"])
+        self.assertGreater(len(matched_lead["enrichment"]["tenants"]), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

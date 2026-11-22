@@ -236,7 +236,17 @@ export default function RadarWorkspace() {
       const results = Array.isArray(data.results) ? data.results : []
       const withEnrichment = (lead: LeadItem) => {
         const enriched = results.find((result: { lead_id: number }) => result.lead_id === lead.id)
-        return !enriched ? lead : { ...lead, enrichment: { employee_or_student_count: enriched.signals?.employee_count || 100, current_payment_methods: enriched.signals?.current_payment || 'QRIS / Tunai', pitch_script_wa: enriched.pitch_wa, pitch_script_visit: enriched.pitch_visit, raw_scraped_summary: enriched.signals?.news_signal || '' } }
+        return !enriched ? lead : {
+          ...lead,
+          enrichment: {
+            employee_or_student_count: enriched.signals?.employee_count || 100,
+            current_payment_methods: enriched.signals?.current_payment || 'QRIS / Tunai',
+            pitch_script_wa: enriched.pitch_wa,
+            pitch_script_visit: enriched.pitch_visit,
+            raw_scraped_summary: enriched.signals?.news_signal || '',
+            tenants: Array.isArray(enriched.signals?.tenants) ? enriched.signals.tenants : [],
+          },
+        }
       }
       setLeads((current) => current.map(withEnrichment))
       setSelectedLead((current) => current ? withEnrichment(current) : current)

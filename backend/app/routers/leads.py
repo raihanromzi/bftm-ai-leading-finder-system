@@ -14,7 +14,7 @@ from sqlmodel import Session, select
 from app.config import settings
 from app.database import get_session
 from app.models import Lead, LeadEnrichment
-from app.services.scraper import scrape_lead_context
+from app.services.scraper import is_office_building, scrape_lead_context
 
 router = APIRouter()
 
@@ -28,10 +28,61 @@ class EnrichRequest(BaseModel):
 
 
 def _mock_enrichment_for_lead(lead: Lead) -> tuple[dict, str, str]:
+    if is_office_building(lead.name, lead.category):
+        building_name = lead.name.split("(")[0].strip()
+        tenants = [
+            {
+                "name": "PT Nusantara Digital Solutions",
+                "industry": "Teknologi & SaaS",
+                "floor": "Lt. 12",
+                "employee_estimate": "120–180 karyawan",
+                "product": "Rekening Payroll Mandiri & KOPRA",
+            },
+            {
+                "name": "PT Samudra Logistik Internasional",
+                "industry": "Freight & Supply Chain",
+                "floor": "Lt. 8",
+                "employee_estimate": "60–100 karyawan",
+                "product": "Corporate Cash Management (KOPRA)",
+            },
+            {
+                "name": "Kantor Konsultan Pajak & Hukum Wardhana",
+                "industry": "Legal & Tax Advisory",
+                "floor": "Lt. 19",
+                "employee_estimate": "35–50 karyawan",
+                "product": "Payroll Mandiri Eksekutif",
+            },
+            {
+                "name": f"Kantin & Coffee Corner Lobby {building_name}",
+                "industry": "F&B / Merchant",
+                "floor": "Ground Floor",
+                "employee_estimate": "10–15 karyawan",
+                "product": "Livin' Merchant & EDC Mandiri",
+            },
+        ]
+        signals = {
+            "employee_count": 450,
+            "current_payment": "Payroll Bank Swasta / Tunai / QRIS",
+            "news_signal": f"Gedung perkantoran {lead.name} dihuni oleh beragam tenant korporasi, startup teknologi, dan layanan profesional potensial.",
+            "tenants": tenants,
+        }
+        pitch_wa = (
+            f"Selamat pagi/siang Bapak/Ibu Pimpinan / HRD di {building_name}, kami dari Bank Mandiri. "
+            f"Kami melihat potensi pertumbuhan bisnis instansi Anda dan ingin menawarkan program Payroll Mandiri bebas biaya admin "
+            f"serta KOPRA Cash Management. Bisa kami diskusikan lebih lanjut via WhatsApp atau kunjungan ke kantor Anda?"
+        )
+        pitch_visit = (
+            f"Selamat pagi Bapak/Ibu Pimpinan Tenant {building_name}. Kami dari Tim BFTM Bank Mandiri KC Danantara. "
+            f"Kami hadir untuk menawarkan solusi payroll karyawan dan transaksi bisnis dengan benefit eksklusif bunga tabungan "
+            f"serta fasilitas kredit serbaguna mandiri (KSM) khusus pegawai di {building_name}."
+        )
+        return signals, pitch_wa, pitch_visit
+
     signals = {
         "employee_count": 150 if lead.category == "factory" else 50,
         "current_payment": "Cash only" if lead.category == "cafe" else "Multiple channels",
         "news_signal": f"Perusahaan {lead.name} berkembang pesat di {lead.address.split(',')[-1]}",
+        "tenants": [],
     }
     pitch_wa = (
         f"Halo Ibu/Bapak {lead.name.split()[0]}, kami dari Bank Mandiri. "
@@ -53,6 +104,14 @@ async def _gemini_enrichment_for_lead(lead: Lead, scraped_context: str = "") -> 
         f"\nData publik & web yang berhasil diekstrak (ScrapeGraphAI):\n{scraped_context}\n"
         if scraped_context else ""
     )
+    is_building = is_office_building(lead.name, lead.category)
+    building_instruction = (
+        f"\nPERHATIAN KHUSUS: Entitas ini adalah gedung perkantoran / multi-tenant ({lead.name}). "
+        f"Tugas utama: Identifikasi dan ekstrak daftar kantor PT / perusahaan tenant yang beroperasi DI DALAM gedung ini.\n"
+        f"Isi array 'tenants' dengan objek: {{\"name\": \"<nama PT/perusahaan>\", \"industry\": \"<bidang usaha>\", \"floor\": \"<lantai>\", \"employee_estimate\": \"<estimasi karyawan>\", \"product\": \"<rekomendasi produk Mandiri>\"}}.\n"
+        f"Jika bukan gedung, kembalikan array 'tenants' kosong [].\n"
+        if is_building else ""
+    )
     prompt = (
         "Anda adalah asisten BFTM (Branch Funding Transaction Manager) Bank Mandiri di wilayah Jabodetabek. "
         "Gunakan data publik & web berikut (jika ada) untuk menghasilkan analisis akurat dan naskah penawaran dalam Bahasa Indonesia yang sopan, ringkas, dan natural.\n"
@@ -61,13 +120,25 @@ async def _gemini_enrichment_for_lead(lead: Lead, scraped_context: str = "") -> 
         f"Alamat: {lead.address}\n"
         f"Produk rekomendasi Mandiri: {lead.recommended_product}\n"
         f"Target pengambil keputusan: {lead.pitch_angle}\n"
+        f"{building_instruction}"
         f"{scraped_section}\n"
         "Kembalikan JSON valid dengan field persis:\n"
-        '{"employee_count": <integer estimasi karyawan/siswa>, '
-        '"current_payment": "<string metode pembayaran saat ini atau umum>", '
-        '"news_signal": "<1 kalimat ringkasan potensi akuisisi berbasis data>", '
-        '"pitch_wa": "<pesan WhatsApp singkat <= 3 kalimat>", '
-        '"pitch_visit": "<skrip pembuka kunjungan tatap muka <= 3 kalimat>"}'
+        "{\n"
+        '  "employee_count": <integer estimasi karyawan/siswa>,\n'
+        '  "current_payment": "<string metode pembayaran saat ini atau umum>",\n'
+        '  "news_signal": "<1 kalimat ringkasan potensi akuisisi berbasis data>",\n'
+        '  "pitch_wa": "<pesan WhatsApp singkat <= 3 kalimat ditujukan ke HRD/Finance tenant/manajemen>",\n'
+        '  "pitch_visit": "<skrip pembuka kunjungan tatap muka <= 3 kalimat>",\n'
+        '  "tenants": [\n'
+        '    {\n'
+        '      "name": "<nama perusahaan/PT/kantor>",\n'
+        '      "industry": "<bidang usaha>",\n'
+        '      "floor": "<lantai>",\n'
+        '      "employee_estimate": "<estimasi karyawan>",\n'
+        '      "product": "<produk Mandiri rekomendasi>"\n'
+        '    }\n'
+        '  ]\n'
+        "}"
     )
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{settings.gemini_model}:generateContent"
     payload = {
@@ -87,10 +158,13 @@ async def _gemini_enrichment_for_lead(lead: Lead, scraped_context: str = "") -> 
     data = response.json()
     raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
     parsed = json.loads(raw_text)
+    raw_tenants = parsed.get("tenants")
+    tenants = raw_tenants if isinstance(raw_tenants, list) else []
     signals = {
         "employee_count": int(parsed.get("employee_count") or 50),
         "current_payment": str(parsed.get("current_payment") or "QRIS / Transfer"),
         "news_signal": str(parsed.get("news_signal") or f"Potensi kerja sama transaksi dengan {lead.name}."),
+        "tenants": tenants,
     }
     pitch_wa = str(parsed.get("pitch_wa") or "")
     pitch_visit = str(parsed.get("pitch_visit") or "")
@@ -139,7 +213,12 @@ async def enrich_leads(req: EnrichRequest, session: Session = Depends(get_sessio
         ).first()
         if not enrichment:
             enrichment = LeadEnrichment(lead_id=lead_id)
-        enrichment.raw_scraped_summary = signals["news_signal"]
+
+        enrichment_payload = {
+            "summary": signals.get("news_signal", ""),
+            "tenants": signals.get("tenants", []),
+        }
+        enrichment.raw_scraped_summary = json.dumps(enrichment_payload, ensure_ascii=False)
         enrichment.employee_or_student_count = signals["employee_count"]
         enrichment.current_payment_methods = signals["current_payment"]
         enrichment.pitch_script_wa = pitch_wa
@@ -192,6 +271,17 @@ async def list_leads(session: Session = Depends(get_session)):
     result = []
     for lead in leads:
         enrichment = session.exec(select(LeadEnrichment).where(LeadEnrichment.lead_id == lead.id)).first()
+        raw_summary = enrichment.raw_scraped_summary if enrichment else ""
+        tenants = []
+        if raw_summary:
+            try:
+                parsed_json = json.loads(raw_summary)
+                if isinstance(parsed_json, dict):
+                    raw_summary = parsed_json.get("summary", "")
+                    tenants = parsed_json.get("tenants", [])
+            except Exception:
+                pass
+
         result.append({
             "id": lead.id,
             "place_id": lead.place_id,
@@ -211,6 +301,8 @@ async def list_leads(session: Session = Depends(get_session)):
                 "current_payment_methods": enrichment.current_payment_methods if enrichment else "",
                 "pitch_script_wa": enrichment.pitch_script_wa if enrichment else "",
                 "pitch_script_visit": enrichment.pitch_script_visit if enrichment else "",
+                "raw_scraped_summary": raw_summary,
+                "tenants": tenants,
             } if enrichment else None,
         })
     return {"leads": result}
@@ -228,12 +320,23 @@ async def export_leads(session: Session = Depends(get_session)):
     writer.writerow([
         "Name", "Category", "Address", "Phone", "Website",
         "Product", "Fit Score", "Status",
-        "Employee Count", "Payment Methods", "Pitch (WhatsApp)"
+        "Employee Count", "Payment Methods", "Tenants / Kantor Gedung", "Pitch (WhatsApp)"
     ])
 
     # Rows
     for lead in leads:
         enrichment = session.exec(select(LeadEnrichment).where(LeadEnrichment.lead_id == lead.id)).first()
+        tenants_str = ""
+        if enrichment and enrichment.raw_scraped_summary:
+            try:
+                parsed_json = json.loads(enrichment.raw_scraped_summary)
+                if isinstance(parsed_json, dict) and parsed_json.get("tenants"):
+                    tenants_str = "; ".join(
+                        f"{t.get('name', '')} ({t.get('floor', '')})" for t in parsed_json["tenants"] if t.get("name")
+                    )
+            except Exception:
+                pass
+
         writer.writerow([
             lead.name,
             lead.category,
@@ -245,6 +348,7 @@ async def export_leads(session: Session = Depends(get_session)):
             lead.lead_status,
             enrichment.employee_or_student_count if enrichment else "",
             enrichment.current_payment_methods if enrichment else "",
+            tenants_str,
             enrichment.pitch_script_wa if enrichment else "",
         ])
 

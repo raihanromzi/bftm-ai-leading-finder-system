@@ -20,6 +20,31 @@ All endpoints and client features functional and verified:
 - UI/UX Craft: ✅ Single "Lihat Detail" drawer entry point, per-lead loading state, zero build warnings
 
 ## Completed Slices
+- [x] **Enhancement: Building Tenant Unbundling & Office Directory Intelligence**
+  - Resolved the limitation where scanning commercial areas returned generic office towers (e.g. "RDTX Tower") rather than the actual companies operating inside.
+  - Implemented Building Tenant Unbundling across the full stack:
+    1. **Targeted SearchGraph Prompt:** Detects office towers/buildings (`is_office_building`) and queries public web/business directories specifically for `daftar perusahaan, kantor PT, dan tenant bisnis di gedung {name}`.
+    2. **Gemini Structured Tenant Extraction:** Parses building occupants into structured tenant objects: `name`, `industry`, `floor`, `employee_estimate`, and `product` (e.g. Payroll Mandiri, KOPRA).
+    3. **Tactile Tenant Directory UI (`LeadDetailDrawer.tsx`):**
+       - Displays a dedicated "Bedah Tenant & Kantor Gedung" card for office buildings.
+       - Each tenant item features industry/floor metadata, target Mandiri product, and a 1-click **"Targetkan"** button.
+       - Selecting a tenant instantly tailors the WhatsApp and Visit sales pitch to that specific company's HR/Finance management.
+       - Added dedicated **"Pengelola Gedung"** pitch tab to pitch Building Management for hosting *Mandiri Banking Days / Onsite Pop-Up Booths* in the lobby.
+    4. **Discovery & Mock Enhancements:** Expanded Places search bucket to include `consultant`, `financial_institution`, and `coworking_space`, and added `RDTX Tower (Mega Kuningan)` to lead mock templates.
+    5. **CSV Export:** Updated export to include the `Tenants / Kantor Gedung` column.
+  - *Modified Files:*
+    - `backend/app/services/scraper.py`
+    - `backend/app/routers/discover.py`
+    - `backend/app/routers/leads.py`
+    - `backend/tests/test_api.py`
+    - `frontend/src/components/LeadDetailDrawer.tsx`
+    - `frontend/src/components/RadarWorkspace.tsx`
+    - `frontend/src/app/lead-drawer.css`
+    - `README.md`
+    - `docs/PRD.md`
+    - `docs/MVP-PLAN.md`
+    - `docs/progress.md`
+
 - [x] **Bug Fix: Retain Active POIs on Micro-Shifts & Spatial Token-Saving Threshold**
   - Resolved issue where clicking the map to adjust coordinates immediately purged all leads (`setLeads([])`) and triggered an unthrottled API discovery request.
   - Implemented smart spatial cache threshold (`calculateDistanceKm`):

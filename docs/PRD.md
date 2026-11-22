@@ -25,13 +25,14 @@
     - *Daily Retail & Convenience Chains:* `convenience_store` (Indomaret, Alfamart, FamilyMart), `supermarket`, `grocery_store`, `shopping_mall`
     - *Corporate & Industrial:* `corporate_office`, `manufacturer`
   - Returns place name, address, latitude/longitude, category, phone number, and official website URI.
-- **[FR-3] Two-Tier ScrapeGraphAI Enrichment Engine:**
+- **[FR-3] Two-Tier ScrapeGraphAI Enrichment & Building Tenant Unbundling Engine:**
   - Fast-path discovery returns raw places in ~2s.
   - On-demand "Deep-Dive Enrich" triggered per lead or in batches.
+  - **Multi-Tenant Building Intelligence:** When scanning office towers/buildings (e.g. RDTX Tower, Wisma Danantara), SearchGraph & Gemini specifically crawl tenant directories (`"daftar perusahaan/kantor" di "{gedung}"`), unbundling the actual companies, PTs, and startups inside (including industry, floor, and employee scale) so BFTMs can target real companies rather than hollow building shells.
   - Hybrid scraper pipeline:
     - *Path A (Website available):* `SmartScraperGraph` crawls the place website for entity details (headcount, accreditation, business scale, current payment terms).
-    - *Path B (No website):* `SearchGraph` executes a web search query `"{place_name} {district/city}"` to retrieve recent local news, social media footprint, and size indicators.
-  - Configurable LLM provider (`OpenAI gpt-4o-mini` or `Google Gemini 1.5 Flash` via `.env`).
+    - *Path B (No website / Building Directory):* `SearchGraph` executes a web search query for company profiles or tenant directories.
+  - Configurable LLM provider (`OpenAI gpt-4o-mini` or `Google Gemini 1.5/2.0 Flash` via `.env`).
 - **[FR-4] Bank Mandiri Rule-Gated Product Engine & Pitch Generator:**
   - Deterministic banking product mapping:
     - *K-12 Schools (SD/SMP/SMA):* Tabungan SimPel (students) + Rekening Payroll Mandiri (teachers/staff).

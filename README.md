@@ -18,6 +18,7 @@ A specialized web workspace for Bank Mandiri Branch Funding Transaction Managers
   - *Schools / Universities* $\rightarrow$ Tabungan SimPel, Payroll, & Livin' Campus Acquisition
   - *Factories / Industrial* $\rightarrow$ Payroll Mandiri & Corporate Cash Management (KOPRA)
   - *Retail / Cafes / Markets* $\rightarrow$ Livin' Merchant & EDC Mandiri (QRIS / POS)
+- 🏢 **Building Tenant Unbundling & Intelligence:** Identifies multi-tenant office towers (e.g. RDTX Tower, Wisma Danantara, Menara Rajawali) and unbundles the actual companies, PTs, and offices operating inside each floor, equipped with 1-click tailored pitches for specific tenant HRDs and Building Management onsite pop-up booth proposals.
 - 🕷️ **Two-Tier ScrapeGraphAI Enrichment:**
   - `SmartScraperGraph`: Deep crawl on official entity websites.
   - `SearchGraph`: Public Indonesian web & local news crawl fallback.

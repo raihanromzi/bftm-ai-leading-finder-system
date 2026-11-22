@@ -25,6 +25,13 @@ def _build_graph_config(gemini_api_key: str) -> dict:
     }
 
 
+def is_office_building(name: str, category: str = "") -> bool:
+    """Identify if a place is an office tower or multi-tenant commercial complex."""
+    name_lower = name.lower()
+    keywords = ("tower", "menara", "gedung", "wisma", "building", "plaza", "office park", "center", "square", "arcade")
+    return any(kw in name_lower for kw in keywords) or category in ("factory", "corporate_office")
+
+
 def _run_sync_scrape(name: str, address: str, category: str, website: str = "") -> str:
     """Run ScrapeGraphAI SearchGraph (or SmartScraperGraph if website provided)."""
     if not settings.gemini_api_key:
@@ -36,8 +43,8 @@ def _run_sync_scrape(name: str, address: str, category: str, website: str = "") 
     if website and website.startswith("http"):
         try:
             prompt = (
-                f"Ekstrak informasi profil organisasi/usaha: jumlah karyawan atau murid, "
-                f"kegiatan atau program terkini, dan metode pembayaran/transaksi yang digunakan."
+                f"Ekstrak informasi profil organisasi/usaha: daftar perusahaan/tenant yang berkantor jika berupa gedung, "
+                f"jumlah karyawan atau murid, kegiatan atau program terkini, dan metode pembayaran/transaksi yang digunakan."
             )
             scraper = SmartScraperGraph(
                 prompt=prompt,
@@ -51,11 +58,18 @@ def _run_sync_scrape(name: str, address: str, category: str, website: str = "") 
             logger.warning(f"SmartScraperGraph failed for {website}: {e}, falling back to SearchGraph")
 
     # 2. Use SearchGraph to search public web & local Indonesian news/directories
-    search_prompt = (
-        f"Cari informasi terkini mengenai profil '{name}' di wilayah '{address}', Indonesia. "
-        f"Kategori: '{category}'. "
-        f"Temukan data spesifik: jumlah karyawan/siswa/pedagang, kegiatan aktif, dan transaksi atau metode pembayaran."
-    )
+    if is_office_building(name, category):
+        search_prompt = (
+            f"Daftar perusahaan, kantor PT, instansi hukum, startup teknologi, dan tenant bisnis yang berkantor di gedung '{name}', '{address}', Jakarta, Indonesia. "
+            f"Sebutkan nama-nama perusahaan tenant spesifik, bidang usaha, dan perkiraan lantai atau skala karyawan mereka untuk penawaran payroll dan perbankan."
+        )
+    else:
+        search_prompt = (
+            f"Cari informasi terkini mengenai profil '{name}' di wilayah '{address}', Indonesia. "
+            f"Kategori: '{category}'. "
+            f"Temukan data spesifik: jumlah karyawan/siswa/pedagang, kegiatan aktif, dan transaksi atau metode pembayaran."
+        )
+
     scraper = SearchGraph(
         prompt=search_prompt,
         config=config,
