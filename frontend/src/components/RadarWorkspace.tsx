@@ -68,6 +68,14 @@ function productColor(product: string) {
   return 'is-campus'
 }
 
+function calculateDistanceKm(coordA: [number, number], coordB: [number, number]): number {
+  const [latA, lngA] = coordA
+  const [latB, lngB] = coordB
+  const latDiff = (latB - latA) * 111.32
+  const lngDiff = (lngB - lngA) * 111.32 * Math.cos((((latA + latB) / 2) * Math.PI) / 180)
+  return Math.hypot(latDiff, lngDiff)
+}
+
 function leadDistanceKm(lead: LeadItem, center: [number, number]) {
   const [originLat, originLng] = center
   const latDistance = (lead.latitude - originLat) * 111.32
@@ -81,6 +89,7 @@ export default function RadarWorkspace() {
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null)
   const [radius, setRadius] = useState(3)
   const [leads, setLeads] = useState<LeadItem[]>([])
+  const [scannedCenter, setScannedCenter] = useState<[number, number] | null>(null)
   const [loading, setLoading] = useState(false)
   const [enrichingIds, setEnrichingIds] = useState<Set<number>>(new Set())
   const [mapCenter, setMapCenter] = useState<[number, number]>([-6.2249, 106.8145])
@@ -149,6 +158,7 @@ export default function RadarWorkspace() {
       }
       const foundLeads: LeadItem[] = (await response.json()).leads || []
       setLeads(foundLeads)
+      setScannedCenter(coordinates)
       setNotice(foundLeads.length ? `${foundLeads.length} prospek ditemukan dalam radius ${radius} km.` : 'Tidak ada prospek pada radius ini. Pindahkan titik atau perluas radius.')
     } catch (error) {
       setNotice(error instanceof Error ? error.message : 'Pemindaian gagal. Periksa koneksi backend, lalu coba lagi.')
@@ -162,7 +172,27 @@ export default function RadarWorkspace() {
     setSelectedLead(null)
     setHoveredLead(null)
     setIsDrawerOpen(false)
-    setLeads([])
+
+    // Check if movement is within active mapping coverage (micro-shift < 600m)
+    if (scannedCenter && leads.length > 0) {
+      const shiftKm = calculateDistanceKm(coordinates, scannedCenter)
+      const SHIFT_THRESHOLD_KM = Math.min(0.6, radius * 0.3)
+
+      if (shiftKm < SHIFT_THRESHOLD_KM) {
+        // Shift is small, still within active mapping!
+        // Retain existing leads and avoid unnecessary API token consumption.
+        const meters = Math.round(shiftKm * 1000)
+        setNotice(
+          meters > 15
+            ? `Titik pusat digeser ${meters} m. Prospek tetap tersimpan (hemat token). Klik "Pindai wilayah" jika ingin memindai ulang.`
+            : ''
+        )
+        return
+      }
+    }
+
+    // Significant relocation (> threshold) or initial scan:
+    // Notice: Do NOT wipe leads immediately (no setLeads([])) so UI doesn't flash empty while loading
     discoverAt(coordinates)
   }
 
@@ -309,6 +339,11 @@ export default function RadarWorkspace() {
             <Button onClick={() => discoverAt()} disabled={loading} className="radar-primary-button w-full">
               {loading ? <Loader2 className="animate-spin" /> : <Radio />}{loading ? 'Memindai…' : 'Pindai wilayah'}
             </Button>
+            {notice && (
+              <p className="radar-control-notice" aria-live="polite">
+                {notice}
+              </p>
+            )}
           </section>
 
           <section className="radar-filter-section">

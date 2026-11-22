@@ -20,6 +20,17 @@ All endpoints and client features functional and verified:
 - UI/UX Craft: ✅ Single "Lihat Detail" drawer entry point, per-lead loading state, zero build warnings
 
 ## Completed Slices
+- [x] **Bug Fix: Retain Active POIs on Micro-Shifts & Spatial Token-Saving Threshold**
+  - Resolved issue where clicking the map to adjust coordinates immediately purged all leads (`setLeads([])`) and triggered an unthrottled API discovery request.
+  - Implemented smart spatial cache threshold (`calculateDistanceKm`):
+    - Micro-shifts within the active area (< 600m from `scannedCenter`): retains existing leads and markers, updates center/radius smoothly, and bypasses redundant `/api/discover` calls to save API tokens and quota.
+    - Added user feedback notice (`.radar-control-notice`): informs user that prospek are preserved and tokens saved, while keeping the "Pindai wilayah" button available for explicit re-scans.
+    - Macro-relocations (> 600m): retains previous leads during loading to eliminate jarring empty screen flashes before new leads arrive.
+  - *Modified Files:*
+    - `frontend/src/components/RadarWorkspace.tsx`
+    - `frontend/src/app/globals.css`
+    - `docs/progress.md`
+
 - [x] **Enhancement: Zero-Key Minimalist Map Canvas & GPU-Filtered 4-Theme Switcher**
   - Replaced third-party raster tile dependencies (such as CartoDB which recently imposed "API KEY REQUIRED" watermarks) with rock-solid, zero-key **OpenStreetMap** base tiles combined with GPU-accelerated CSS filter modes.
   - Added tactile floating theme switcher pill (`Layers` icon + 4 segment buttons):
