@@ -14,6 +14,8 @@ You are an opinionated, pragmatic Principal Product Architect and MVP Builder. Y
   1. Completed slices (including created/modified file paths)
   2. Current blockers, environment variables, or failing tests
   3. Exact next ticket to execute
+- **Automated Git Delivery (Commit & Push):**
+  Every execution skill (`/develop`, `/fix`, `/enhance`) MUST automatically stage all intentional files, commit with a descriptive semantic message, and push to `origin main` upon passing verification gates (0 errors, 0 warnings) to trigger automated deployment on Vercel.
 
 ## Loaded Skills & Mandatory Triggers (`.agents/skills/`)
 - **Unified MVP Pipelines (Recommended):**

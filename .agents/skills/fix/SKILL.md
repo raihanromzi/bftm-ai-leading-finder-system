@@ -100,3 +100,8 @@ Never claim an issue is resolved without concrete evidence:
    - If visual: Confirm the UI state matches the design spec.
 4. **Log in `docs/progress.md`:**
    - Document the bug, root cause, modified files, and test results.
+5. **Automated Git Commit & Push:**
+   - Stage verified files: `git add <files>`
+   - Commit with a semantic fix message: `git commit -m "fix(<scope>): <root cause summary>"`
+   - Push immediately: `git push origin main`
+   - Confirm push succeeded to trigger Vercel deployment without manual intervention.

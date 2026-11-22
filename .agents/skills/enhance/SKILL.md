@@ -90,9 +90,16 @@ Ensure the enhancement caused zero regressions:
 
 ---
 
-## Phase 4: Summary & Git Handoff
+## Phase 4: Summary & Git Commit/Push
 
-1. Run `git status` to verify:
-   - Code files modified are intentional.
-   - All documentation files (`README.md`, `docs/*.md`) are staged together with code.
-2. Provide a concise summary of the enhancement and the exact docs updated.
+1. **Verify Staging:**
+   - Run `git status` to verify:
+     - Code files modified are intentional.
+     - All documentation files (`README.md`, `docs/*.md`) are staged together with code.
+2. **Automated Git Commit & Push:**
+   - Stage all relevant files: `git add <files>`
+   - Commit with a semantic message: `git commit -m "enhance(<scope>): <summary of improvements and doc sync>"`
+   - Push immediately: `git push origin main`
+   - Confirm push succeeded to trigger Vercel deployment.
+3. **Summary:**
+   - Provide a concise summary of the enhancement, verified tests, and the exact docs updated.

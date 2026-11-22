@@ -108,3 +108,8 @@ Never mark a task complete or push changes without empirical verification:
      1. Completed slice and modified file paths.
      2. Status of tests and verification evidence.
      3. Exact next ticket to execute.
+4. **Automated Git Commit & Push:**
+   - Stage verified files: `git add <files>`
+   - Commit with a semantic message: `git commit -m "feat(<scope>): <description>"`
+   - Push immediately: `git push origin main`
+   - Confirm push was successful so Vercel automated deployment triggers immediately.
