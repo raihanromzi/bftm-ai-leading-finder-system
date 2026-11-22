@@ -1,8 +1,31 @@
 # BFTM Radar — Hyperlocal Lead Finder for Bank Mandiri
 
-**MVP Status:** ✅ **Ready to Deploy**
+**MVP Status:** ✅ **SHIPPED & PRODUCTION READY**
 
-A web-based tool for Bank Mandiri Branch Funding Transaction Managers (BFTMs) to discover, qualify, and engage nearby commercial and educational entities for financial product acquisition.
+**Live Deployments:**
+- 🌐 **Frontend App:** [https://frontend-en92sazwe-raihan-romzi-rs-projects.vercel.app](https://frontend-en92sazwe-raihan-romzi-rs-projects.vercel.app)
+- ⚙️ **Backend API (Swagger Docs):** [https://backend-three-pi-11.vercel.app/docs](https://backend-three-pi-11.vercel.app/docs)
+
+A specialized web workspace for Bank Mandiri Branch Funding Transaction Managers (BFTMs) to discover, qualify, and engage nearby commercial and educational entities for financial product acquisition within a customizable radar radius.
+
+---
+
+## Key Features
+
+- 📍 **Hyperlocal Territory Radar:** Interactive map (Leaflet) with Mandiri branch presets and dynamic radius slider (1–25 km).
+- 🔍 **Real POI Discovery:** Google Places API (New) integration with Jabodetabek regional buffer geofencing.
+- 🎯 **Rule-Gated Bank Product Engine:** Deterministic mapping to Mandiri products:
+  - *Schools / Universities* $\rightarrow$ Tabungan SimPel, Payroll, & Livin' Campus Acquisition
+  - *Factories / Industrial* $\rightarrow$ Payroll Mandiri & Corporate Cash Management (KOPRA)
+  - *Retail / Cafes / Markets* $\rightarrow$ Livin' Merchant & EDC Mandiri (QRIS / POS)
+- 🕷️ **Two-Tier ScrapeGraphAI Enrichment:**
+  - `SmartScraperGraph`: Deep crawl on official entity websites.
+  - `SearchGraph`: Public Indonesian web & local news crawl fallback.
+  - **Gemini 2.0 Flash** synthesis generating factual signals (headcount, payment methods) and conversational *Bahasa Indonesia* pitch scripts.
+- 📱 **Tactile Field Dossier Drawer:** Slide-over detail drawer (`LeadDetailDrawer`) with instant 1-click WhatsApp web link (`628...` sanitized) and copyable pitch scripts.
+- 💾 **Dual Database Engine:** Serverless-ready Neon PostgreSQL (`DATABASE_URL`) with connection pooling and local SQLite development fallback.
+- 📊 **1-Click Field Export:** Download ranked leads with full contact info, matched products, and sales scripts as CSV.
+- 🛠️ **Unified Agent Skills:** Dedicated `/develop`, `/fix`, and `/enhance` pipelines with automated testing, commit, and push.
 
 ---
 
@@ -37,32 +60,33 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 ## Architecture
 
 ### Frontend
-- **Framework:** Next.js 16 (App Router)
-- **UI:** Leaflet.js map + React, Tailwind CSS, Lucide icons
+- **Framework:** Next.js 16 (App Router with Turbopack)
+- **UI:** Leaflet.js map, Tailwind CSS, Lucide icons, Geist fonts
 - **Components:**
-  - `RadarWorkspace.tsx` — Main workspace (branch selector + radius + controls)
-  - `RadarMap.tsx` — Leaflet map of Indonesia with branch presets + lead markers
-  - `LeadsTable.tsx` — Sortable, selectable leads table with status dropdown
+  - `RadarWorkspace.tsx` — Main field intelligence workspace (branch select, dynamic radius slider, live health indicator)
+  - `RadarMap.tsx` — Leaflet map with custom category SVG DivIcons & interactive radial scan circle
+  - `LeadDetailDrawer.tsx` — Tactile slide-over dossier with copyable Indonesian pitch scripts & WhatsApp direct chat
   
 - **API Integration:**
   - `GET /api/health` — Backend health check
-  - `GET /api/branches` — Preset branch locations (8 presets: Jakarta, Bandung, Surabaya, etc.)
-  - `POST /api/discover` — Discover nearby leads (latitude, longitude, radius_km)
-  - `PATCH /api/leads/{id}/status` — Update lead status (New → Contacted → Visit Scheduled → Won/Dropped)
-  - `GET /api/leads/export` — Stream CSV export
+  - `GET /api/branches` — Preset Mandiri branch locations with on-demand auto-seed
+  - `POST /api/discover` — Google Places API (New) nearby search with geofence guard
+  - `POST /api/leads/enrich` — ScrapeGraphAI two-tier web crawling + Gemini pitch script synthesis
+  - `PATCH /api/leads/{id}/status` — Validated status lifecycle (`New` → `Contacted` → `Visit Scheduled` → `Won`/`Dropped`)
+  - `GET /api/leads/export` — Downloadable streaming CSV field export
 
 ### Backend
-- **Framework:** FastAPI (Python 3.11)
-- **Database:** SQLite (dev) / Neon Postgres (prod)
+- **Framework:** FastAPI (Python 3.11+)
+- **Database:** Neon PostgreSQL (production) with connection pooling (`pool_pre_ping`) / SQLite (local dev)
 - **Core Modules:**
-  - `app/config.py` — Environment variables
-  - `app/database.py` — SQLModel + SQLAlchemy engine
-  - `app/models.py` — Data schema: `BranchPreset`, `Lead`, `LeadEnrichment`
-  - `app/services/product_matching.py` — 6-rule keyword engine (school→85%, cafe→70%, default→50%)
-  - `app/routers/health.py` — Health check endpoint
-  - `app/routers/branches.py` — Branch presets + seed data
-  - `app/routers/discover.py` — `POST /api/discover` with mock Google Places data
-  - `app/routers/leads.py` — Status updates, list leads, CSV export
+  - `app/config.py` — Settings & environment variables
+  - `app/database.py` — SQLModel engine with automatic `postgres://` to `postgresql://` normalization
+  - `app/models.py` — SQLModel tables: `BranchPreset`, `Lead`, `LeadEnrichment`
+  - `app/services/scraper.py` — ScrapeGraphAI integration (`SearchGraph` & `SmartScraperGraph`)
+  - `app/services/product_matching.py` — Deterministic Mandiri product mapping engine
+  - `app/routers/discover.py` — Google Places API (New) & Jabodetabek boundary guard
+  - `app/routers/leads.py` — ScrapeGraphAI enrichment, status lifecycle, and CSV export
+  - `tests/test_api.py` — Automated regression test suite (8/8 passing)
 
 **Key Features:**
 - ✅ Hyperlocal discovery (5–25 km radius)
@@ -95,10 +119,11 @@ NEXT_PUBLIC_API_URL=https://[backend-project].vercel.app
 
 **Backend (Vercel dashboard):**
 ```env
-GOOGLE_PLACES_API_KEY=                  # Leave blank for MVP (mock data)
-OPENAI_API_KEY=                         # Leave blank for MVP
-FRONTEND_ORIGIN=https://[frontend].vercel.app
-DATABASE_URL=sqlite:///./bftm_radar.db
+DATABASE_URL=postgresql://user:pass@ep-xxx.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
+GEMINI_API_KEY=AIzaSy...
+GEMINI_MODEL=gemini-2.0-flash
+GOOGLE_PLACES_API_KEY=AIzaSy...
+FRONTEND_ORIGIN=https://frontend-en92sazwe-raihan-romzi-rs-projects.vercel.app
 ```
 
 ### 4. Push & Deploy
@@ -189,19 +214,19 @@ enriched_at: datetime
 
 ---
 
-## Post-MVP Roadmap
+## Feature Roadmap & Status
 
-| Feature | Ticket | Status | Blocker |
-|---------|--------|--------|---------|
-| Mock discovery | Ticket 2 | ✅ Done | — |
-| Product matching | Ticket 3 | ✅ Done | — |
-| Lead pipeline + export | Ticket 5 | ✅ Done | — |
-| **ScrapeGraphAI enrichment** | Ticket 4 | 🟡 Stub | Need OpenAI API key |
-| **Google Places API** | Ticket 2 | 🟡 Fallback mock | Need Google Places API key |
-| **Postgres database** | Infra | 🔲 Not started | Need Neon Postgres link |
-| **User authentication** | Auth | 🔲 Not started | Need Clerk/Auth0 |
-| **WhatsApp integration** | Ticket 4 | 🔲 Not started | Manual copy-paste only (MVP) |
-| **Multi-language** | UX | 🔲 Not started | Indonesian (Bahasa) only (MVP) |
+| Feature | Scope / Ticket | Status | Technology |
+|---|---|---|---|
+| **Hyperlocal Map & Radar** | Ticket 1 & 2 | ✅ Shipped | Leaflet + Custom SVG DivIcons + Radial Visualizer |
+| **Google Places Discovery** | Ticket 2 | ✅ Shipped | Google Places API (New) + Jabodetabek Boundary Guard |
+| **Mandiri Product Matching** | Ticket 3 | ✅ Shipped | Rule-Gated Engine (SimPel, Payroll, Livin' Merchant, EDC, KOPRA) |
+| **ScrapeGraphAI Web Crawling** | Ticket 4 | ✅ Shipped | `SmartScraperGraph` + `SearchGraph` (Gemini 2.0 Flash Backbone) |
+| **Lead Pipeline & CSV Export** | Ticket 5 | ✅ Shipped | Lifecycle State Machine + 1-Click Streaming CSV Export |
+| **PostgreSQL Database** | Infra | ✅ Shipped | Neon PostgreSQL (`DATABASE_URL`) with Pool Pre-Ping |
+| **Tactile Dossier Drawer** | UX | ✅ Shipped | `LeadDetailDrawer` with Sanitized WhatsApp Direct Chat (`628...`) |
+| **Automated Regression Suite** | Quality | ✅ Shipped | Python `unittest` (8/8 API test cases passing) |
+| **Unified Operating Skills** | Tooling | ✅ Shipped | `/develop`, `/fix`, `/enhance` with automated Git delivery |
 
 ---
 
@@ -229,9 +254,8 @@ enriched_at: datetime
 
 ## Deployment Links
 
-**After first Vercel deploy:**
-- **Frontend:** https://[your-frontend-project].vercel.app
-- **Backend:** https://[your-backend-project].vercel.app/docs (Swagger)
+- 🌐 **Frontend (Live):** [https://frontend-en92sazwe-raihan-romzi-rs-projects.vercel.app](https://frontend-en92sazwe-raihan-romzi-rs-projects.vercel.app)
+- ⚙️ **Backend API & Swagger (Live):** [https://backend-three-pi-11.vercel.app/docs](https://backend-three-pi-11.vercel.app/docs)
 
 ---
 

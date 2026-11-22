@@ -48,10 +48,11 @@
 
 ## 5. Minimal Tech Stack & Data Model
 - **Stack:**
-  - **Frontend:** Next.js 14+ (App Router, TypeScript, Tailwind CSS, Leaflet / React-Leaflet, Lucide Icons).
-  - **Backend:** FastAPI (Python 3.11+, ScrapeGraphAI, Google Places API client, Pydantic).
-  - **Database:** Local SQLite (`bftm_radar.db`) via SQLModel / SQLAlchemy.
-  - **LLM/Extraction:** LiteLLM / ScrapeGraphAI with OpenAI `gpt-4o-mini` or Google Gemini Flash.
+  - **Frontend:** Next.js 16 (App Router with Turbopack, TypeScript, Tailwind CSS, Leaflet, Lucide Icons, Geist Sans).
+  - **Backend:** FastAPI (Python 3.11+, ScrapeGraphAI 2.3.1, Google Places API client, Pydantic).
+  - **Database:** Neon PostgreSQL (production) with pool pre-ping / SQLite (`bftm_radar.db`) for local dev via SQLModel.
+  - **LLM/Extraction:** ScrapeGraphAI (`SearchGraph` & `SmartScraperGraph`) with Google Gemini 2.0 Flash (`langchain-google-genai`).
+  - **Delivery:** Automated CI/CD to Vercel via GitHub `main` branch.
 - **Core Entities / Schema:**
   - `BranchPreset`: `id`, `name`, `code`, `latitude`, `longitude`, `city`.
   - `Lead`: `id`, `place_id`, `name`, `category`, `address`, `latitude`, `longitude`, `phone_number`, `website`, `recommended_product`, `pitch_angle`, `fit_score`, `lead_status`, `created_at`.
