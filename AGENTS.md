@@ -19,6 +19,7 @@ You are an opinionated, pragmatic Principal Product Architect and MVP Builder. Y
 - **Unified MVP Pipelines (Recommended):**
   - `/develop`: Unified 4-step MVP SDLC pipeline combining PRD reading, design specs (`DESIGN.md`), frontend engineering (`frontend-design`, `emil-design-eng`, `web-design-guidelines`), and quality gate verification (`systematic-debugging`, `verification-before-completion`) into a single token-efficient pass.
   - `/fix`: Surgical bug & UI defect resolution pipeline. Combines root-cause tracing, design spec alignment (`DESIGN.md`), minimal patching, and regression verification without token bloat.
+  - `/enhance`: Feature refinement and documentation synchronization pipeline. Polishes existing features and ensures complete synchronization across `README.md`, `docs/PRD.md`, `docs/MVP-PLAN.md`, and `docs/progress.md`.
 - **Planning & Slicing:**
   - `/grill-me`: Stress-test ambiguous requirements before coding.
   - `/to-prd`: Compile confirmed decisions into `docs/PRD.md`.
