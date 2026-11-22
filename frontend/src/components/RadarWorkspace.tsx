@@ -13,6 +13,7 @@ import {
   Loader2,
   LocateFixed,
   MapPin,
+  Navigation,
   Radio,
   RotateCcw,
   Search,
@@ -43,6 +44,12 @@ interface Branch {
   latitude: number
   longitude: number
   city: string
+}
+
+interface GeoPlace {
+  label: string
+  latitude: number
+  longitude: number
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -83,6 +90,32 @@ function leadDistanceKm(lead: LeadItem, center: [number, number]) {
   return Math.max(0.1, Math.hypot(latDistance, lngDistance)).toFixed(1)
 }
 
+function googleMapsRouteUrl(leads: LeadItem[], origin: [number, number]) {
+  const stops = leads.slice(0, 8)
+  if (!stops.length) return null
+  const point = (lat: number, lng: number) => `${lat.toFixed(6)},${lng.toFixed(6)}`
+  const params = new URLSearchParams({
+    api: '1',
+    travelmode: 'driving',
+    origin: point(origin[0], origin[1]),
+    destination: point(stops[0].latitude, stops[0].longitude),
+  })
+  if (stops.length > 1) params.set('waypoints', stops.slice(1).map((lead) => point(lead.latitude, lead.longitude)).join('|'))
+  return `https://www.google.com/maps/dir/?${params.toString()}`
+}
+
+function downloadMyMapsCsv(leads: LeadItem[], branchCode: string) {
+  const header = ['Name', 'Address', 'Latitude', 'Longitude', 'Product', 'Notes']
+  const rows = leads.map((lead) => [lead.name, lead.address, lead.latitude, lead.longitude, lead.recommended_product, `Fit ${lead.fit_score}% · ${lead.lead_status}`])
+  const csv = [header, ...rows].map((cells) => cells.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(',')).join('\n')
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `gmaps-list-${branchCode}.csv`
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
 export default function RadarWorkspace() {
   const [health, setHealth] = useState<HealthStatus>('checking')
   const [branches, setBranches] = useState<Branch[]>([])
@@ -99,6 +132,9 @@ export default function RadarWorkspace() {
   const [notice, setNotice] = useState('')
   const [query, setQuery] = useState('')
   const [activeFilter, setActiveFilter] = useState<FilterId>('all')
+  const [geoQuery, setGeoQuery] = useState('')
+  const [geoResults, setGeoResults] = useState<GeoPlace[]>([])
+  const [geoSearching, setGeoSearching] = useState(false)
 
   useEffect(() => {
     const checkHealth = async () => {
@@ -280,6 +316,30 @@ export default function RadarWorkspace() {
     setIsDrawerOpen(true)
   }
 
+  const searchLocation = async () => {
+    const value = geoQuery.trim()
+    if (value.length < 2) return
+    setGeoSearching(true)
+    try {
+      const response = await fetch(`${API_URL}/api/geocode/search`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: value }) })
+      if (!response.ok) throw new Error('geocode failed')
+      const data: { places: GeoPlace[] } = await response.json()
+      setGeoResults(data.places || [])
+    } catch {
+      setNotice('Pencarian lokasi gagal. Periksa koneksi lalu coba lagi.')
+      setGeoResults([])
+    } finally {
+      setGeoSearching(false)
+    }
+  }
+
+  const goToPlace = (place: GeoPlace) => {
+    setGeoResults([])
+    setGeoQuery('')
+    handleLocationChange([place.latitude, place.longitude])
+    setNotice(`Koordinat dipindah ke ${place.label}. Memindai prospek sekitar…`)
+  }
+
   const panelLead = hoveredLead && !isDrawerOpen ? hoveredLead : null
 
   return (
@@ -304,11 +364,36 @@ export default function RadarWorkspace() {
             <div className="flex items-center gap-2"><h1>BFTM Radar</h1><span className={`radar-live is-${health}`}>{health === 'ok' ? 'LIVE' : health === 'error' ? 'OFFLINE' : 'CEK'}</span></div>
             <p>{selectedBranch?.city || 'Wilayah cabang'} <span>·</span> <strong>{radius} km</strong></p>
           </div>
-          <Button variant="ghost" size="icon" onClick={handleExport} disabled={!leads.length} aria-label="Ekspor prospek CSV"><Download size={17} /></Button>
+          <div className="radar-export-actions">
+            <Button variant="ghost" size="icon" onClick={() => downloadMyMapsCsv(visibleLeads, selectedBranch?.code || 'bftm')} disabled={!visibleLeads.length} aria-label="Unduh CSV untuk Google My Maps"><Download size={17} /></Button>
+            <Button variant="ghost" size="icon" onClick={() => {
+              const url = googleMapsRouteUrl(visibleLeads, mapCenter)
+              if (url) window.open(url, '_blank', 'noopener,noreferrer')
+            }} disabled={!visibleLeads.length} aria-label="Buka rute prospek di Google Maps"><Navigation size={17} /></Button>
+          </div>
         </header>
 
         <div className="radar-sidebar-scroll">
           <section className="radar-control-section">
+            <div className="radar-location-search">
+              <Search size={16} aria-hidden="true" />
+              <input
+                type="search"
+                name="location-search"
+                autoComplete="off"
+                value={geoQuery}
+                onChange={(event) => setGeoQuery(event.target.value)}
+                onKeyDown={(event) => event.key === 'Enter' && searchLocation()}
+                placeholder="Cari lokasi untuk pindai area…"
+                aria-label="Cari lokasi"
+              />
+              <button type="button" onClick={searchLocation} disabled={geoSearching || geoQuery.trim().length < 2} aria-label="Cari lokasi">
+                {geoSearching ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+              </button>
+              {geoResults.length > 0 && <div className="radar-location-results">
+                {geoResults.map((place) => <button key={`${place.latitude}-${place.longitude}`} type="button" onClick={() => goToPlace(place)}>{place.label}</button>)}
+              </div>}
+            </div>
             <div className="radar-branch-card">
               <div className="radar-branch-icon" aria-hidden="true">
                 <Building2 size={18} />

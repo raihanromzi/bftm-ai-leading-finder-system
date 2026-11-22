@@ -20,6 +20,26 @@ All endpoints and client features functional and verified:
 - UI/UX Craft: ✅ Single "Lihat Detail" drawer entry point, per-lead loading state, zero build warnings
 
 ## Completed Slices
+- [x] **Enhancement: Location Search & Google Maps Export**
+- Location search: free-text place lookup via OpenStreetMap Nominatim (no API key), 5 Indonesian-locale suggestions, picking one recenters the radar and auto-scans nearest leads in that area.
+- Backend: new `POST /api/geocode/search` router (`backend/app/routers/geocode.py`) with query validation (2–200 chars) and 502 on upstream failure.
+- Google Maps export: header now offers two actions — open up to 8 visible leads as a Google Maps multi-stop driving route, and download a Google My Maps-compatible CSV (`Name, Address, Latitude, Longitude, Product, Notes`) of the full visible list.
+- Added regression test `test_10_location_search` (search "Monas Jakarta" returns coordinates inside Jabodetabek; short query rejected 422).
+- *Modified Files:*
+  - `backend/app/routers/geocode.py` (new)
+  - `backend/main.py`
+  - `backend/tests/test_api.py`
+  - `frontend/src/components/RadarWorkspace.tsx`
+  - `frontend/src/app/globals.css`
+  - `README.md`
+  - `docs/PRD.md`
+  - `docs/progress.md`
+- *Acceptance Check:*
+  - Backend automated regression suite: 10/10 tests PASSED (0 errors)
+  - Frontend `npm run type-check`: PASSED (0 errors)
+  - Frontend `npm run build`: PASSED (0 errors)
+- *Next Ticket:* Manual verification of location search + Google Maps route/CSV export on the deployed frontend.
+
 - [x] **Bug Fix: Revert Default Map Styling to Vibrant Full-Color OpenStreetMap**
   - Reverted default map canvas from desaturated minimalist filter back to vibrant, natural full-color OpenStreetMap view (`standar` / `Berwarna`).
   - Restored clear visual differentiation for parks (green), water bodies (blue), arterial roads (orange/yellow), and residential districts with zero API key requirement.

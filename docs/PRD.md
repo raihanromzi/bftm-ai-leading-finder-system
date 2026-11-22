@@ -6,13 +6,15 @@
 - **Success Metric (v1):** A BFTM can drop a branch pin, discover 30+ verified entities within 10 km in < 3 seconds, deep-enrich a selected batch with ScrapeGraphAI signals in < 60 seconds, and export a ranked field-visit list with customized Indonesian pitch scripts to CSV in under 2 minutes.
 
 ## 2. Core User Flow (Happy Path)
-1. **Branch Location & Radius Entry:** The officer opens the workspace, selects a preset Mandiri branch (or searches/clicks a pin on an interactive Indonesian map), and configures the focused search radius (default: 3 km, slider 1–5 km for deep hyperlocal density).
+1. **Location Search, Branch & Radius Entry:** The officer searches a location by name; picking a result recenters the map and automatically scans for nearest potential leads. They can also start from the branch base or click the map, then configure the focused search radius (default: 3 km, slider 1–5 km for deep hyperlocal density).
 2. **Hyperlocal Discovery Scan:** The officer clicks "Scan Radar". The backend queries Google Places API to discover commercial, institutional, and retail POIs (schools, factories, UMKM, coffee shops, convenience stores near universities). The leads populate the map markers and a ranked filterable table instantly with basic metadata and deterministic product match tags.
 3. **Targeted AI Enrichment (ScrapeGraphAI):** The officer inspects the leads, selects high-value targets (individual or batch top-5/10), and clicks "Deep-Dive Enrich". ScrapeGraphAI executes a hybrid crawl (direct website SmartScraperGraph if URL exists, or SearchGraph fallback on `"[Entity Name] [Kecamatan/Kota]"`) extracting student/employee count, current payment channels, and local news signals.
 4. **Product Match & Indonesian Pitch Scripting:** The engine refines the product fit score and generates a personalized *Bahasa Indonesia formal-santun* sales pitch script (tailored for WhatsApp or in-person branch visits) citing the discovered signals.
 5. **Pipeline Action & Export:** The officer tracks engagement status (`New`, `Contacted`, `Visit Scheduled`, `Won`, `Dropped`) and downloads a 1-click CSV ready for field execution.
 
 ## 3. MVP Functional Requirements (In-Scope)
+- **[FR-1] Location Search, Interactive Branch Map & Radius Control:**
+- Free-text location search resolves up to 5 Indonesian place suggestions through OpenStreetMap Nominatim. Selecting one recenters the radar and automatically runs discovery in that area.
 - **[FR-1] Interactive Branch Map & Radius Control:** 
   - Interactive Leaflet.js map anchored to home base **Bank Mandiri KC Jakarta Wisma Danantara** (Wisma Danantara Indonesia / ex Plaza Mandiri, Jl. Jend. Gatot Subroto Kav. 36–38, Jakarta Selatan).
   - Tactile Branch Identity Card with dynamic 1-click "Reset ke Cabang" button when exploring outside home base coordinates.
@@ -45,6 +47,7 @@
   - Searchable, filterable lead table (filter by product, category, enrichment status, or minimum score).
   - Status lifecycle updates: `New` $\rightarrow$ `Contacted` $\rightarrow$ `Visit Scheduled` $\rightarrow$ `Won` / `Dropped`.
   - 1-Click CSV export containing: Entity Name, Category, Address, Phone, Website, Matched Product, Fit Score, Lead Status, Enriched Signals, and WhatsApp Pitch Script.
+- Google Maps sharing: open up to 8 visible leads in a multi-stop driving route, or download the full visible list as a Google My Maps-compatible CSV (`Name`, `Address`, `Latitude`, `Longitude`, `Product`, `Notes`).
 
 ## 4. Explicit Non-Goals (Out of Scope for MVP)
 - **Private Social Network Scraping:** No authenticated scraping of closed Facebook groups, private Instagram accounts, or bypass of anti-bot protections.

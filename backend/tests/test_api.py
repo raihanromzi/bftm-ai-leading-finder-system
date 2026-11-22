@@ -110,6 +110,23 @@ class TestBFTMRadarAPI(unittest.IsolatedAsyncioTestCase):
         lines = content.strip().split("\n")
         self.assertGreaterEqual(len(lines), 2)  # Header + at least 1 lead row
 
+    async def test_10_location_search(self):
+        # Geocode search for a known Jakarta landmark
+        r = await self.client.post("/api/geocode/search", json={"query": "Monas Jakarta"})
+        self.assertEqual(r.status_code, 200)
+        places = r.json().get("places", [])
+        self.assertGreater(len(places), 0)
+        first = places[0]
+        self.assertIn("label", first)
+        self.assertIsInstance(first["latitude"], float)
+        self.assertIsInstance(first["longitude"], float)
+        # Should land inside Jabodetabek
+        self.assertTrue(-6.70 < first["latitude"] < -6.08)
+
+        # Empty/too-short query rejected
+        r_short = await self.client.post("/api/geocode/search", json={"query": "a"})
+        self.assertEqual(r_short.status_code, 422)
+
     async def test_09_office_building_tenant_unbundling(self):
         # Discover leads
         payload = {"latitude": -6.2249, "longitude": 106.8145, "radius_km": 3}

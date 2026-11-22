@@ -6,7 +6,7 @@ from app.config import settings
 from app.database import create_db_and_tables, get_session
 from app.models import BranchPreset  # noqa: F401 — registers table with SQLModel metadata
 from app.seed_branches import seed_branches
-from app.routers import health, branches, discover, leads
+from app.routers import health, branches, discover, leads, geocode
 
 
 @asynccontextmanager
@@ -40,4 +40,5 @@ app.add_middleware(
 app.include_router(health.router, prefix="/api")
 app.include_router(branches.router, prefix="/api")
 app.include_router(discover.router, prefix="/api")
+app.include_router(geocode.router, prefix="/api")
 app.include_router(leads.router, prefix="/api")

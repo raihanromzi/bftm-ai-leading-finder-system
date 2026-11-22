@@ -13,7 +13,9 @@ A specialized web workspace for Bank Mandiri Branch Funding Transaction Managers
 ## Key Features
 
 - 📍 **Hyperlocal Territory Radar:** Interactive map (Leaflet) anchored to Bank Mandiri KC Jakarta Wisma Danantara (Wisma Danantara Indonesia / ex Plaza Mandiri, Jl. Jend. Gatot Subroto Kav. 36–38) with tactile Branch Identity Card, instant reset button, focused radius slider (1–5 km, default 3 km), and a vibrant full-color default map canvas with 4 instant switchable visual styles (`Berwarna`, `Modern`, `Minimalis`, `Gelap`).
+- 🔎 **Location Search:** Free-text location lookup (OpenStreetMap Nominatim, no API key) that instantly recenters the radar on a found place and auto-runs a discovery scan for the nearest potential leads in that area.
 - 🔍 **Deep Commercial Ecosystem Discovery:** Google Places API (New) integration with 4 parallel search buckets (Campuses & Schools, Cafes & Coffee Hubs, Retail Chains like Indomaret/Alfamart/FamilyMart, and Corporate/Workplaces) retrieving dense, actionable leads across the target radius.
+- 🗺️ **Google Maps Export:** One-click multi-stop driving route opened directly in Google Maps (up to 8 leads from the current scan origin), plus a Google My Maps-compatible CSV (`Name, Address, Latitude, Longitude, Product, Notes`) for sharing the full visible lead list with the team.
 - 🎯 **Rule-Gated Bank Product Engine:** Deterministic mapping to Mandiri products:
   - *Schools / Universities* $\rightarrow$ Tabungan SimPel, Payroll, & Livin' Campus Acquisition
   - *Factories / Industrial* $\rightarrow$ Payroll Mandiri & Corporate Cash Management (KOPRA)
@@ -75,6 +77,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
   - `POST /api/leads/enrich` — ScrapeGraphAI two-tier web crawling + Gemini pitch script synthesis
   - `PATCH /api/leads/{id}/status` — Validated status lifecycle (`New` → `Contacted` → `Visit Scheduled` → `Won`/`Dropped`)
   - `GET /api/leads/export` — Downloadable streaming CSV field export
+  - `POST /api/geocode/search` — Free-text location search (OpenStreetMap Nominatim) returning coordinates for radar recentering
 
 ### Backend
 - **Framework:** FastAPI (Python 3.11+)
