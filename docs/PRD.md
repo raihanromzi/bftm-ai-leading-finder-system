@@ -6,7 +6,7 @@
 - **Success Metric (v1):** A BFTM can drop a branch pin, discover 30+ verified entities within 10 km in < 3 seconds, deep-enrich a selected batch with ScrapeGraphAI signals in < 60 seconds, and export a ranked field-visit list with customized Indonesian pitch scripts to CSV in under 2 minutes.
 
 ## 2. Core User Flow (Happy Path)
-1. **Branch Location & Radius Entry:** The officer opens the workspace, selects a preset Mandiri branch (or searches/clicks a pin on an interactive Indonesian map), and configures the search radius (default: 10 km, slider 1–25 km).
+1. **Branch Location & Radius Entry:** The officer opens the workspace, selects a preset Mandiri branch (or searches/clicks a pin on an interactive Indonesian map), and configures the focused search radius (default: 3 km, slider 1–5 km for deep hyperlocal density).
 2. **Hyperlocal Discovery Scan:** The officer clicks "Scan Radar". The backend queries Google Places API to discover commercial, institutional, and retail POIs (schools, factories, UMKM, coffee shops, convenience stores near universities). The leads populate the map markers and a ranked filterable table instantly with basic metadata and deterministic product match tags.
 3. **Targeted AI Enrichment (ScrapeGraphAI):** The officer inspects the leads, selects high-value targets (individual or batch top-5/10), and clicks "Deep-Dive Enrich". ScrapeGraphAI executes a hybrid crawl (direct website SmartScraperGraph if URL exists, or SearchGraph fallback on `"[Entity Name] [Kecamatan/Kota]"`) extracting student/employee count, current payment channels, and local news signals.
 4. **Product Match & Indonesian Pitch Scripting:** The engine refines the product fit score and generates a personalized *Bahasa Indonesia formal-santun* sales pitch script (tailored for WhatsApp or in-person branch visits) citing the discovered signals.
@@ -15,9 +15,13 @@
 ## 3. MVP Functional Requirements (In-Scope)
 - **[FR-1] Interactive Branch Map & Radius Control:** 
   - Interactive Leaflet.js map centered on Indonesia (with default presets like KC Jakarta Thamrin, KCP Bandung Dago, KC Surabaya Basuki Rahmat, etc.).
-  - Draggable pin / coordinate click with dynamic circular radius visualizer (1 km to 25 km slider).
-- **[FR-2] Hyperlocal Discovery Engine (Google Places API):**
-  - Backend integration with Google Places API (Nearby Search & Text Search) targeting targeted Indonesian business types: `school`, `university`, `factory/industrial`, `cafe/restaurant`, `retail/supermarket`, and convenience chains (`Indomaret`, `Alfamart`, `FamilyMart`).
+  - Draggable pin / coordinate click with dynamic circular radius visualizer (1 km to 5 km slider, default 3 km).
+- **[FR-2] Hyperlocal Deep Ecosystem Discovery Engine (Google Places API):**
+  - Backend integration with Google Places API (Nearby Search with `POPULARITY` ranking and 4 parallel category buckets) targeting high-density ecosystems:
+    - *Campuses & Schools:* `university`, `college`, `school`, `primary_school`, `secondary_school`
+    - *Merchant Ecosystem (F&B / Coffee):* `cafe`, `coffee_shop`, `restaurant`, `bakery`, `fast_food_restaurant`
+    - *Daily Retail & Convenience Chains:* `convenience_store` (Indomaret, Alfamart, FamilyMart), `supermarket`, `grocery_store`, `shopping_mall`
+    - *Corporate & Industrial:* `corporate_office`, `manufacturer`
   - Returns place name, address, latitude/longitude, category, phone number, and official website URI.
 - **[FR-3] Two-Tier ScrapeGraphAI Enrichment Engine:**
   - Fast-path discovery returns raw places in ~2s.

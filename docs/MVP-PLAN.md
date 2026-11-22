@@ -40,19 +40,19 @@ Ship a fully working MVP where BFTMs can drop a branch pin, discover 30+ verifie
 ## Ticket Breakdown (Vertical Slices)
 
 ### **Ticket 2: Hyperlocal Discovery Engine & Map Interaction** (1–1.5 hrs)
-**Goal:** User selects branch preset (or pins map), sets radius (1–25 km), clicks "Scan", populates lead table with mock or real Google Places data.
+**Goal:** User selects branch preset (or pins map), sets focused radius (1–5 km, default 3 km), clicks "Scan", populates lead table with high-density commercial & campus ecosystem leads.
 
 **Frontend:**
 - Branch preset dropdown (fetch from `GET /api/branches`, auto-select KC Jakarta Thamrin)
 - Map interaction: click to place pin, or use preset
-- Radius slider (1–25 km) with live circle draw on map
+- Radius slider (1–5 km) with dynamic track fill and live circle draw on map
 - "Scan" button → trigger `POST /api/discover`
 - Empty lead table (ready for Ticket 3 styling)
 
 **Backend:**
-- `POST /api/discover` endpoint: accept `{latitude, longitude, radius_km, categories?}`
-- If `GOOGLE_PLACES_API_KEY` present: call Google Places API (Nearby Search)
-  - Query categories: `school`, `university`, `cafe`, `restaurant`, `shopping_mall`, `convenience_store`, `factory`, `industrial_complex`
+- `POST /api/discover` endpoint: accept `{latitude, longitude, radius_km, categories?}` where radius_km is 1–5 km
+- If `GOOGLE_PLACES_API_KEY` present: call Google Places API (New) with 4 parallel category buckets (`POPULARITY` ranking)
+  - Query categories: `university`, `school`, `cafe`, `coffee_shop`, `restaurant`, `convenience_store` (Indomaret, Alfamart, FamilyMart), `supermarket`, `corporate_office`, `manufacturer`
 - Fallback (no key): return 10 mock leads (scripted JSON) with plausible names, coords, addresses
 - Return: `{leads: [{id, place_id, name, category, address, lat, lng, phone, website}, ...]}`
 - **Store in DB**: Insert `Lead` rows; return with `place_id` as unique key (upsert if exists)

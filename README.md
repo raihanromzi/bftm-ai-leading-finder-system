@@ -12,8 +12,8 @@ A specialized web workspace for Bank Mandiri Branch Funding Transaction Managers
 
 ## Key Features
 
-- 📍 **Hyperlocal Territory Radar:** Interactive map (Leaflet) with Mandiri branch presets and dynamic radius slider (1–25 km).
-- 🔍 **Real POI Discovery:** Google Places API (New) integration with Jabodetabek regional buffer geofencing.
+- 📍 **Hyperlocal Territory Radar:** Interactive map (Leaflet) with Mandiri branch presets and focused radius slider (1–5 km, default 3 km) designed for high-density ecosystem prospecting.
+- 🔍 **Deep Commercial Ecosystem Discovery:** Google Places API (New) integration with 4 parallel search buckets (Campuses & Schools, Cafes & Coffee Hubs, Retail Chains like Indomaret/Alfamart/FamilyMart, and Corporate/Workplaces) retrieving dense, actionable leads across the target radius.
 - 🎯 **Rule-Gated Bank Product Engine:** Deterministic mapping to Mandiri products:
   - *Schools / Universities* $\rightarrow$ Tabungan SimPel, Payroll, & Livin' Campus Acquisition
   - *Factories / Industrial* $\rightarrow$ Payroll Mandiri & Corporate Cash Management (KOPRA)

@@ -20,6 +20,32 @@ All endpoints and client features functional and verified:
 - UI/UX Craft: ✅ Single "Lihat Detail" drawer entry point, per-lead loading state, zero build warnings
 
 ## Completed Slices
+- [x] **Enhancement: Focused Hyperlocal Radius (1–5 km) & Deep Campus/Merchant Ecosystem Mapping**
+  - Tightened radius focus to 1–5 km (default 3 km) with exact slider track sync `((radius - 1) / 4) * 100%`.
+  - Upgraded Google Places discovery to 4 deep parallel buckets (`max_count=12` each) with `POPULARITY` ranking:
+    1. Higher Education & Schools (`university`, `college`, `school`)
+    2. Campus & Neighborhood F&B / Coffee Hubs (`cafe`, `coffee_shop`, `restaurant`, `bakery`, `fast_food_restaurant`)
+    3. Daily Retail Chains & Outlets (`convenience_store` - Indomaret/Alfamart/FamilyMart, `supermarket`, `grocery_store`)
+    4. Corporate & Industrial Workplaces (`corporate_office`, `manufacturer`)
+  - Updated category normalization in `discover.py` so `coffee_shop`, `fast_food`, and `grocery_store` map directly to high-fit Mandiri products.
+  - Expanded mock lead templates to 10 rich campus/community ecosystem leads.
+  - Updated Pydantic validation: `radius_km: int = Field(ge=1, le=5)`.
+  - Added test case validating rejection of radius > 5 km.
+  - Synchronized documentation across `README.md`, `docs/PRD.md`, `docs/MVP-PLAN.md`, and `docs/progress.md`.
+  - *Modified Files:*
+    - `backend/app/routers/discover.py`
+    - `backend/tests/test_api.py`
+    - `frontend/src/components/RadarWorkspace.tsx`
+    - `frontend/src/app/globals.css`
+    - `README.md`
+    - `docs/PRD.md`
+    - `docs/MVP-PLAN.md`
+    - `docs/progress.md`
+  - *Acceptance Check:*
+    - Backend automated regression suite: 8/8 tests PASSED (0 errors, 0 warnings)
+    - Frontend `npm run type-check`: PASSED (0 errors)
+    - Frontend `npm run build`: PASSED (0 errors, 0 warnings)
+
 - [x] **Post-MVP Hardening, Range Slider Fix & Unified Skills**
   - Integrated real ScrapeGraphAI (`SearchGraph` & `SmartScraperGraph`) with Gemini 2.0 Flash backbone and BeautifulSoup HTTP fallback.
   - Added PostgreSQL support (`psycopg2-binary`, pool pre-ping, URL scheme normalization for Neon/Supabase).

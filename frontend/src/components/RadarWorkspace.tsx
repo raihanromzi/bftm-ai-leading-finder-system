@@ -78,7 +78,7 @@ export default function RadarWorkspace() {
   const [health, setHealth] = useState<HealthStatus>('checking')
   const [branches, setBranches] = useState<Branch[]>([])
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null)
-  const [radius, setRadius] = useState(10)
+  const [radius, setRadius] = useState(3)
   const [leads, setLeads] = useState<LeadItem[]>([])
   const [loading, setLoading] = useState(false)
   const [enrichingIds, setEnrichingIds] = useState<Set<number>>(new Set())
@@ -272,10 +272,10 @@ export default function RadarWorkspace() {
               name="radius"
               type="range"
               min="1"
-              max="25"
+              max="5"
               step="1"
               value={radius}
-              style={{ '--slider-fill': `${((radius - 1) / 24) * 100}%` } as React.CSSProperties}
+              style={{ '--slider-fill': `${((radius - 1) / 4) * 100}%` } as React.CSSProperties}
               onChange={(event) => setRadius(Number(event.target.value))}
             />
             <Button onClick={() => discoverAt()} disabled={loading} className="radar-primary-button w-full">

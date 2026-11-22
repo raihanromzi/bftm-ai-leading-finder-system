@@ -20,18 +20,26 @@ router = APIRouter()
 class DiscoverRequest(BaseModel):
     latitude: float = Field(ge=-90, le=90)
     longitude: float = Field(ge=-180, le=180)
-    radius_km: int = Field(ge=1, le=25)
+    radius_km: int = Field(ge=1, le=5)
     categories: list[str] | None = None
 
 
 MOCK_LEAD_TEMPLATES = [
-    {"place_id": "mock-sdn-01", "name": "Sekolah Nusantara", "category": "school", "phone_number": "+62 21 123 4567", "website": ""},
-    {"place_id": "mock-campus", "name": "Kampus Cakrawala", "category": "university", "phone_number": "+62 21 555 2888", "website": ""},
-    {"place_id": "mock-convenience", "name": "Minimarket Setempat", "category": "convenience_store", "phone_number": "+62 21 123 9999", "website": ""},
-    {"place_id": "mock-cafe", "name": "Kopi Sudut Kota", "category": "cafe", "phone_number": "+62 21 456 7890", "website": ""},
-    {"place_id": "mock-factory", "name": "Sentra Usaha Lokal", "category": "factory", "phone_number": "+62 21 777 8888", "website": ""},
+    {"place_id": "mock-campus-01", "name": "Universitas Cakrawala", "category": "university", "phone_number": "+62 21 555 2888", "website": "https://cakrawala.ac.id"},
+    {"place_id": "mock-cafe-01", "name": "Kopi Kancana Campus Hub", "category": "cafe", "phone_number": "+62 812 4567 8901", "website": ""},
+    {"place_id": "mock-mart-01", "name": "Indomaret Point Kampus", "category": "convenience_store", "phone_number": "+62 21 123 9999", "website": ""},
+    {"place_id": "mock-mart-02", "name": "Alfamart Fresh Kawasan", "category": "convenience_store", "phone_number": "+62 21 123 8888", "website": ""},
+    {"place_id": "mock-food-01", "name": "Kantin & Resto Selera Mahasiswa", "category": "cafe", "phone_number": "+62 813 9988 7766", "website": ""},
+    {"place_id": "mock-sdn-01", "name": "SD & SMP Nusantara Unggul", "category": "school", "phone_number": "+62 21 123 4567", "website": ""},
+    {"place_id": "mock-cafe-02", "name": "FamilyMart Express Transit", "category": "convenience_store", "phone_number": "+62 21 456 1122", "website": ""},
+    {"place_id": "mock-corp-01", "name": "Sentra Niaga & Kantor Operasional", "category": "factory", "phone_number": "+62 21 777 8888", "website": ""},
+    {"place_id": "mock-super-01", "name": "Superindo Pasar Segar", "category": "supermarket", "phone_number": "+62 21 888 2211", "website": ""},
+    {"place_id": "mock-mfg-01", "name": "Workshop & Logistik Terpadu", "category": "factory", "phone_number": "+62 21 333 4455", "website": ""},
 ]
-MOCK_OFFSETS = [(0.2, 15), (0.35, 110), (0.5, 205), (0.65, 285), (0.8, 45)]
+MOCK_OFFSETS = [
+    (0.15, 20), (0.25, 75), (0.35, 140), (0.45, 190), (0.55, 230),
+    (0.65, 280), (0.72, 320), (0.80, 50), (0.88, 110), (0.95, 160)
+]
 GOOGLE_TYPES = ["school", "university", "cafe", "restaurant", "supermarket", "convenience_store"]
 
 # Jabodetabek core bounding box + 40 km outside Jabodetabek
@@ -82,8 +90,8 @@ def category_from_types(types: list[str]) -> str:
         "school": ("school", "primary_school", "secondary_school"),
         "university": ("university", "college"),
         "factory": ("factory", "manufacturer", "industrial", "corporate_office"),
-        "convenience_store": ("convenience_store", "grocery_store"),
-        "cafe": ("cafe", "restaurant", "bakery"),
+        "convenience_store": ("convenience_store", "grocery_store", "market"),
+        "cafe": ("cafe", "coffee", "restaurant", "bakery", "fast_food"),
         "supermarket": ("supermarket", "shopping_mall", "store", "department_store"),
     }.items():
         if any(alias in joined for alias in aliases):
@@ -92,9 +100,14 @@ def category_from_types(types: list[str]) -> str:
 
 
 SEARCH_BUCKETS = [
-    ["school", "primary_school", "secondary_school", "university"],
+    # 1. Higher Education & Schools (SimPel, Payroll, GMM Acquisition)
+    ["university", "college", "school", "secondary_school", "primary_school"],
+    # 2. Campus & Neighborhood F&B / Coffee Hubs (Livin' Merchant & EDC)
+    ["cafe", "coffee_shop", "restaurant", "bakery", "fast_food_restaurant"],
+    # 3. Daily Retail Chains & Outlets (Indomaret, Alfamart, FamilyMart, Superindo)
+    ["convenience_store", "supermarket", "grocery_store", "shopping_mall"],
+    # 4. Corporate & Industrial Workplaces (Payroll Mandiri & KOPRA)
     ["corporate_office", "manufacturer"],
-    ["supermarket", "shopping_mall", "cafe", "restaurant", "store"],
 ]
 
 
@@ -143,7 +156,7 @@ async def google_places(req: DiscoverRequest) -> list[dict]:
             raw_places = await _fetch_places_bucket(client, req, req.categories, max_count=20)
         else:
             bucket_results = await asyncio.gather(
-                *[_fetch_places_bucket(client, req, bucket, max_count=8) for bucket in SEARCH_BUCKETS]
+                *[_fetch_places_bucket(client, req, bucket, max_count=12) for bucket in SEARCH_BUCKETS]
             )
             seen_ids = set()
             for places in bucket_results:

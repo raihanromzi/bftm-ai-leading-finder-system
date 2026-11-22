@@ -36,8 +36,8 @@ class TestBFTMRadarAPI(unittest.IsolatedAsyncioTestCase):
         self.assertIn("longitude", first)
 
     async def test_03_hyperlocal_discovery_jabodetabek(self):
-        # Scan centered at KC Jakarta Thamrin
-        payload = {"latitude": -6.1930, "longitude": 106.8237, "radius_km": 10}
+        # Scan centered at KC Jakarta Thamrin (tight hyperlocal radius: 3 km)
+        payload = {"latitude": -6.1930, "longitude": 106.8237, "radius_km": 3}
         r = await self.client.post("/api/discover", json=payload)
         self.assertEqual(r.status_code, 200)
         data = r.json()
@@ -51,10 +51,17 @@ class TestBFTMRadarAPI(unittest.IsolatedAsyncioTestCase):
 
     async def test_04_geofence_boundary_guard(self):
         # Coordinate in Yogyakarta (outside Jabodetabek + 40km buffer)
-        payload = {"latitude": -7.7956, "longitude": 110.3695, "radius_km": 10}
+        payload = {"latitude": -7.7956, "longitude": 110.3695, "radius_km": 3}
         r = await self.client.post("/api/discover", json=payload)
         self.assertEqual(r.status_code, 400)
         self.assertIn("Jabodetabek", r.json().get("detail", ""))
+
+        # Verify max radius 5 km limit (radius > 5 must be rejected by Pydantic)
+        r_invalid_radius = await self.client.post(
+            "/api/discover",
+            json={"latitude": -6.1930, "longitude": 106.8237, "radius_km": 10},
+        )
+        self.assertEqual(r_invalid_radius.status_code, 422)
 
     async def test_05_leads_listing(self):
         r = await self.client.get("/api/leads")
