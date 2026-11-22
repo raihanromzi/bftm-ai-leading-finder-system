@@ -1,12 +1,59 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Circle, MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
+import { Layers } from 'lucide-react'
 import { LeadItem } from './LeadDetailDrawer'
 
 type Coordinates = [number, number]
+
+export type MapThemeKey = 'positron' | 'voyager' | 'dark' | 'standard'
+
+interface MapTheme {
+  id: MapThemeKey
+  name: string
+  url: string
+  attribution: string
+  subdomains: string
+  maxZoom: number
+}
+
+export const MAP_THEMES: Record<MapThemeKey, MapTheme> = {
+  positron: {
+    id: 'positron',
+    name: 'Minimalis',
+    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 20,
+  },
+  voyager: {
+    id: 'voyager',
+    name: 'Modern',
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 20,
+  },
+  dark: {
+    id: 'dark',
+    name: 'Gelap',
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 20,
+  },
+  standard: {
+    id: 'standard',
+    name: 'Standar',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    subdomains: 'abc',
+    maxZoom: 19,
+  },
+}
 
 interface RadarMapProps {
   center: Coordinates
@@ -74,18 +121,91 @@ const centerIcon = L.divIcon({
 })
 
 export default function RadarMap({ center, radiusKm, leads, selectedLeadId, onLocationChange, onHoverLead, onSelectLead }: RadarMapProps) {
+  const [themeKey, setThemeKey] = useState<MapThemeKey>('positron')
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('bftm-radar-theme') as MapThemeKey | null
+      if (saved && MAP_THEMES[saved]) {
+        setThemeKey(saved)
+      }
+    } catch {}
+  }, [])
+
+  const handleThemeChange = (nextTheme: MapThemeKey) => {
+    setThemeKey(nextTheme)
+    try {
+      localStorage.setItem('bftm-radar-theme', nextTheme)
+    } catch {}
+  }
+
+  const currentTheme = MAP_THEMES[themeKey] || MAP_THEMES.positron
+  const isDark = themeKey === 'dark'
+
   return (
     <div className="radar-map-root">
-      <MapContainer center={center} zoom={12} minZoom={10} maxBounds={JABODETABEK_MAX_BOUNDS} maxBoundsViscosity={1} style={{ height: '100%', width: '100%' }} zoomControl={false}>
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' maxZoom={19} />
+      <MapContainer
+        center={center}
+        zoom={13}
+        minZoom={10}
+        maxBounds={JABODETABEK_MAX_BOUNDS}
+        maxBoundsViscosity={1}
+        style={{ height: '100%', width: '100%' }}
+        zoomControl={false}
+      >
+        <TileLayer
+          key={currentTheme.id}
+          url={currentTheme.url}
+          attribution={currentTheme.attribution}
+          subdomains={currentTheme.subdomains}
+          maxZoom={currentTheme.maxZoom}
+        />
         <FixLeafletIcons />
         <RecenterMap center={center} />
         <MapClickHandler onLocationChange={onLocationChange} />
         <Marker position={center} icon={centerIcon} />
-        <Circle center={center} radius={radiusKm * 1000} pathOptions={{ color: '#2563eb', weight: 1.75, fillColor: '#2563eb', fillOpacity: .08, dashArray: '6, 6' }} />
-        {leads.map((lead) => <Marker key={lead.id} position={[lead.latitude, lead.longitude]} icon={markerIcon(lead.category, lead.fit_score, selectedLeadId === lead.id)} eventHandlers={{ mouseover: () => onHoverLead(lead), mouseout: () => onHoverLead(null), click: () => onSelectLead(lead) }} />)}
+        <Circle
+          center={center}
+          radius={radiusKm * 1000}
+          pathOptions={{
+            color: isDark ? '#38bdf8' : '#2563eb',
+            weight: 1.75,
+            fillColor: isDark ? '#38bdf8' : '#2563eb',
+            fillOpacity: isDark ? 0.12 : 0.08,
+            dashArray: '6, 6',
+          }}
+        />
+        {leads.map((lead) => (
+          <Marker
+            key={lead.id}
+            position={[lead.latitude, lead.longitude]}
+            icon={markerIcon(lead.category, lead.fit_score, selectedLeadId === lead.id)}
+            eventHandlers={{
+              mouseover: () => onHoverLead(lead),
+              mouseout: () => onHoverLead(null),
+              click: () => onSelectLead(lead),
+            }}
+          />
+        ))}
       </MapContainer>
       <div className="radar-map-hint"><span></span>Klik peta untuk pindah koordinat</div>
+      <div className="radar-map-themes" role="group" aria-label="Pilihan tema peta">
+        <span className="radar-theme-label" aria-hidden="true">
+          <Layers size={13} />
+          <span>Tema</span>
+        </span>
+        {(Object.keys(MAP_THEMES) as MapThemeKey[]).map((key) => (
+          <button
+            key={key}
+            type="button"
+            className={`radar-theme-btn ${themeKey === key ? 'is-active' : ''}`}
+            onClick={() => handleThemeChange(key)}
+            aria-pressed={themeKey === key}
+          >
+            {MAP_THEMES[key].name}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }

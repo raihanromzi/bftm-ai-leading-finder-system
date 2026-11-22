@@ -44,6 +44,7 @@ Ship a fully working MVP where BFTMs can drop a branch pin, discover 30+ verifie
 
 **Frontend:**
 - Branch Identity Card (anchored to Bank Mandiri KC Jakarta Wisma Danantara at Wisma Danantara Indonesia / ex Plaza Mandiri Kav. 36-38, with dynamic 1-click "Reset ke Cabang" button)
+- Minimalist default map tiles (CartoDB Positron) with 4 switchable tactile theme pills (`Minimalis`, `Modern`, `Gelap`, `Standar`)
 - Map interaction: click to place pin, or use preset
 - Radius slider (1–5 km) with dynamic track fill and live circle draw on map
 - "Scan" button → trigger `POST /api/discover`

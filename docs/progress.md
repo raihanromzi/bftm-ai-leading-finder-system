@@ -20,6 +20,24 @@ All endpoints and client features functional and verified:
 - UI/UX Craft: ✅ Single "Lihat Detail" drawer entry point, per-lead loading state, zero build warnings
 
 ## Completed Slices
+- [x] **Enhancement: Minimalist Map Canvas & 4-Theme Switcher**
+  - Upgraded base map from standard cluttered OpenStreetMap to ultra-clean **CartoDB Positron** ("Minimalis") as default, stripping away visual distractions (garish yellow/orange road fills and heavy landuse colors) so POI markers and the radius circle pop out with high clarity.
+  - Added tactile floating theme switcher pill (`Layers` icon + 4 segment buttons):
+    1. **Minimalis (Default):** CartoDB Positron — subtle, monochrome gray, optimal for data radar.
+    2. **Modern:** CartoDB Voyager — soft Apple Maps-like pastel tones and clean typographic labels.
+    3. **Gelap:** CartoDB Dark Matter — high-contrast tactical night radar aesthetic with sky-blue glowing radius perimeter (`#38bdf8`).
+    4. **Standar:** OpenStreetMap classic detailed street view.
+  - Persisted theme selection across browser sessions via `localStorage`.
+  - Added responsive layout support for mobile viewports (`max-width: 720px`).
+  - Fully synchronized docs: `README.md`, `docs/PRD.md`, `docs/MVP-PLAN.md`, and `docs/progress.md`.
+  - *Modified Files:*
+    - `frontend/src/components/RadarMap.tsx`
+    - `frontend/src/app/globals.css`
+    - `README.md`
+    - `docs/PRD.md`
+    - `docs/MVP-PLAN.md`
+    - `docs/progress.md`
+
 - [x] **Enhancement: Sole Branch Base (KC Jakarta Wisma Danantara) & Tactile Identity Card**
   - Consolidated branch presets to a single dedicated home base: **Bank Mandiri KC Jakarta Wisma Danantara** (`JKT-DANANTARA`, lat `-6.2249`, lng `106.8145`) inside Wisma Danantara Indonesia (formerly Plaza Mandiri / Plaza Exim), Jl. Jend. Gatot Subroto Kav. 36–38, Jakarta Selatan.
   - Replaced the single-option `<select>` dropdown with an intentional, tactile **Branch Identity Card** featuring branch metadata, operational context, and an automated "Reset ke Cabang" pill button when the officer navigates/clicks outside the home base.
