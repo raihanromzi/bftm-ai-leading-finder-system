@@ -16,7 +16,7 @@
 - **[FR-1] Interactive Branch Map & Radius Control:** 
   - Interactive Leaflet.js map anchored to home base **Bank Mandiri KC Jakarta Wisma Danantara** (Wisma Danantara Indonesia / ex Plaza Mandiri, Jl. Jend. Gatot Subroto Kav. 36–38, Jakarta Selatan).
   - Tactile Branch Identity Card with dynamic 1-click "Reset ke Cabang" button when exploring outside home base coordinates.
-  - Minimalist default map canvas (CartoDB Positron) eliminating road color clutter, paired with a floating 4-theme switcher (`Minimalis`, `Modern`, `Gelap`, `Standar`) and `localStorage` persistence.
+  - Minimalist default map canvas eliminating road color clutter with zero API key dependencies, paired with a floating 4-theme switcher (`Minimalis`, `Modern`, `Gelap`, `Standar`) and `localStorage` persistence.
   - Interactive coordinate click with dynamic circular radius visualizer (1 km to 5 km slider, default 3 km).
 - **[FR-2] Hyperlocal Deep Ecosystem Discovery Engine (Google Places API):**
   - Backend integration with Google Places API (Nearby Search with `POPULARITY` ranking and 4 parallel category buckets) targeting high-density ecosystems:

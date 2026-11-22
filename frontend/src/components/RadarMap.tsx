@@ -9,50 +9,13 @@ import { LeadItem } from './LeadDetailDrawer'
 
 type Coordinates = [number, number]
 
-export type MapThemeKey = 'positron' | 'voyager' | 'dark' | 'standard'
+export type MapThemeKey = 'minimalis' | 'modern' | 'gelap' | 'standar'
 
-interface MapTheme {
-  id: MapThemeKey
-  name: string
-  url: string
-  attribution: string
-  subdomains: string
-  maxZoom: number
-}
-
-export const MAP_THEMES: Record<MapThemeKey, MapTheme> = {
-  positron: {
-    id: 'positron',
-    name: 'Minimalis',
-    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    subdomains: 'abcd',
-    maxZoom: 20,
-  },
-  voyager: {
-    id: 'voyager',
-    name: 'Modern',
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    subdomains: 'abcd',
-    maxZoom: 20,
-  },
-  dark: {
-    id: 'dark',
-    name: 'Gelap',
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    subdomains: 'abcd',
-    maxZoom: 20,
-  },
-  standard: {
-    id: 'standard',
-    name: 'Standar',
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    subdomains: 'abc',
-    maxZoom: 19,
-  },
+export const MAP_THEMES: Record<MapThemeKey, { id: MapThemeKey; name: string }> = {
+  minimalis: { id: 'minimalis', name: 'Minimalis' },
+  modern: { id: 'modern', name: 'Modern' },
+  gelap: { id: 'gelap', name: 'Gelap' },
+  standar: { id: 'standar', name: 'Standar' },
 }
 
 interface RadarMapProps {
@@ -121,14 +84,16 @@ const centerIcon = L.divIcon({
 })
 
 export default function RadarMap({ center, radiusKm, leads, selectedLeadId, onLocationChange, onHoverLead, onSelectLead }: RadarMapProps) {
-  const [themeKey, setThemeKey] = useState<MapThemeKey>('positron')
+  const [themeKey, setThemeKey] = useState<MapThemeKey>('minimalis')
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('bftm-radar-theme') as MapThemeKey | null
-      if (saved && MAP_THEMES[saved]) {
-        setThemeKey(saved)
-      }
+      const saved = localStorage.getItem('bftm-radar-theme')
+      if (saved === 'positron') setThemeKey('minimalis')
+      else if (saved === 'voyager') setThemeKey('modern')
+      else if (saved === 'dark') setThemeKey('gelap')
+      else if (saved === 'standard') setThemeKey('standar')
+      else if (saved && (saved in MAP_THEMES)) setThemeKey(saved as MapThemeKey)
     } catch {}
   }, [])
 
@@ -139,11 +104,10 @@ export default function RadarMap({ center, radiusKm, leads, selectedLeadId, onLo
     } catch {}
   }
 
-  const currentTheme = MAP_THEMES[themeKey] || MAP_THEMES.positron
-  const isDark = themeKey === 'dark'
+  const isDark = themeKey === 'gelap'
 
   return (
-    <div className="radar-map-root">
+    <div className={`radar-map-root theme-${themeKey}`}>
       <MapContainer
         center={center}
         zoom={13}
@@ -154,11 +118,9 @@ export default function RadarMap({ center, radiusKm, leads, selectedLeadId, onLo
         zoomControl={false}
       >
         <TileLayer
-          key={currentTheme.id}
-          url={currentTheme.url}
-          attribution={currentTheme.attribution}
-          subdomains={currentTheme.subdomains}
-          maxZoom={currentTheme.maxZoom}
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          maxZoom={19}
         />
         <FixLeafletIcons />
         <RecenterMap center={center} />

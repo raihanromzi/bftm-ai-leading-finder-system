@@ -20,15 +20,16 @@ All endpoints and client features functional and verified:
 - UI/UX Craft: ✅ Single "Lihat Detail" drawer entry point, per-lead loading state, zero build warnings
 
 ## Completed Slices
-- [x] **Enhancement: Minimalist Map Canvas & 4-Theme Switcher**
-  - Upgraded base map from standard cluttered OpenStreetMap to ultra-clean **CartoDB Positron** ("Minimalis") as default, stripping away visual distractions (garish yellow/orange road fills and heavy landuse colors) so POI markers and the radius circle pop out with high clarity.
+- [x] **Enhancement: Zero-Key Minimalist Map Canvas & GPU-Filtered 4-Theme Switcher**
+  - Replaced third-party raster tile dependencies (such as CartoDB which recently imposed "API KEY REQUIRED" watermarks) with rock-solid, zero-key **OpenStreetMap** base tiles combined with GPU-accelerated CSS filter modes.
   - Added tactile floating theme switcher pill (`Layers` icon + 4 segment buttons):
-    1. **Minimalis (Default):** CartoDB Positron — subtle, monochrome gray, optimal for data radar.
-    2. **Modern:** CartoDB Voyager — soft Apple Maps-like pastel tones and clean typographic labels.
-    3. **Gelap:** CartoDB Dark Matter — high-contrast tactical night radar aesthetic with sky-blue glowing radius perimeter (`#38bdf8`).
-    4. **Standar:** OpenStreetMap classic detailed street view.
-  - Persisted theme selection across browser sessions via `localStorage`.
-  - Added responsive layout support for mobile viewports (`max-width: 720px`).
+    1. **Minimalis (Default):** High-clarity desaturated monochrome gray tones (`grayscale(90%) contrast(92%) brightness(106%)`) stripping garish yellow/orange road clutter so POI pins and radar radius pop out cleanly with zero watermarks.
+    2. **Modern:** Relaxed pastel tones (`saturate(0.55) contrast(98%) brightness(102%)`) offering an Apple-Maps style softness.
+    3. **Gelap:** Tactical night radar aesthetic (`invert(100%) hue-rotate(180deg) brightness(92%) contrast(88%)`) with deep navy background and illuminated sky-blue radius circle (`#38bdf8`).
+    4. **Standar:** Original full-color OpenStreetMap street view.
+  - Zero API key required, zero external quota limits, 0ms instant theme switching without re-downloading tile images.
+  - Persisted theme selection across browser sessions via `localStorage` with backward compatibility for legacy keys.
+  - Responsive design with smooth transitions (`220ms cubic-bezier(.16, 1, .3, 1)`).
   - Fully synchronized docs: `README.md`, `docs/PRD.md`, `docs/MVP-PLAN.md`, and `docs/progress.md`.
   - *Modified Files:*
     - `frontend/src/components/RadarMap.tsx`
